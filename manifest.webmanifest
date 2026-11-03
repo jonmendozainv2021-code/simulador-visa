@@ -1,0 +1,17 @@
+{
+  "name": "Simulador de entrevista de visa B1/B2",
+  "short_name": "Simulador visa",
+  "description": "Practica tu entrevista de visa B1/B2 en español con tu perfil DS-160, calificación y plan hasta tu cita. Por AutoRise Solutions.",
+  "lang": "es-MX",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F7F6",
+  "theme_color": "#0E5E5A",
+  "icons": [
+    { "src": "icons/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

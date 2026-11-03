@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0E5E5A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icono-192.png">
+<link rel="apple-touch-icon" href="icons/icono-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<title>Simulador de entrevista de visa B1/B2</title>
+<meta name="description" content="Práctica de entrevista de visa B1/B2 en español con tu perfil DS-160, evaluación y plan hasta la cita. Versión 1.">
+<style>
+:root{
+  --verde:#0E5E5A; --agua:#CFE8E4; --ambar:#E3A21A; --tinta:#132220; --niebla:#F4F7F6;
+  --gris:#56635F; --linea:#D5DEDB; --ambar-texto:#8A5A00; --exito:#2E7D4F; --error:#B3261E;
+  --bg:var(--niebla); --card:#fff; --txt:var(--tinta); --txt2:var(--gris); --brd:var(--linea);
+  --chip:var(--agua); --chip-txt:#0b3f3c; --warnbg:#fff4d9; --errbg:#fde8e6; --okbg:#e4f3ea; --accent-link:var(--verde);
+  --fh:"Manrope","Segoe UI",Arial,sans-serif; --fb:"Source Sans 3","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1816; --card:#162422; --txt:#e8f0ee; --txt2:#a9b9b5; --brd:#2a3d3a;
+    --chip:#1f3a37; --chip-txt:#cfe8e4; --warnbg:#3a2f12; --errbg:#3d1d1a; --okbg:#173325; --accent-link:#7fd0c8;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1816; --card:#162422; --txt:#e8f0ee; --txt2:#a9b9b5; --brd:#2a3d3a;
+  --chip:#1f3a37; --chip-txt:#cfe8e4; --warnbg:#3a2f12; --errbg:#3d1d1a; --okbg:#173325; --accent-link:#7fd0c8;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:17px;line-height:1.55;overflow-wrap:anywhere}
+h1,h2,h3{font-family:var(--fh);line-height:1.2;margin:0 0 .5em}
+h1{font-size:1.6rem;font-weight:800}h2{font-size:1.35rem;font-weight:800;color:var(--verde)}h3{font-size:1.1rem;font-weight:700}
+:root[data-theme="dark"] h2{color:#7fd0c8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) h2{color:#7fd0c8}}
+a{color:var(--accent-link)}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px}
+header{background:var(--verde);color:#fff;padding:14px 0}
+header .wrap{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+header h1{margin:0;color:#fff;font-size:1.25rem}
+header small{display:block;opacity:.9;font-weight:400;font-family:var(--fb);font-size:.85rem}
+.aviso-legal{background:var(--warnbg);border-left:5px solid var(--ambar);padding:10px 14px;margin:14px 0;border-radius:6px;font-size:.92rem}
+nav.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 16px}
+nav.tabs button{flex:1 1 30%;min-width:0;padding:10px 6px;border:1px solid var(--brd);background:var(--card);color:var(--txt);border-radius:8px;font:600 .9rem var(--fb);cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--verde);color:#fff;border-color:var(--verde)}
+@media(min-width:700px){nav.tabs button{flex:1 1 0}}
+section.panel{display:none}section.panel.on{display:block}
+.card{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+label{display:block;font-weight:600;font-size:.9rem;margin-bottom:2px}
+label span.h{display:block;font-weight:400;color:var(--txt2);font-size:.8rem}
+input,select,textarea{width:100%;font:inherit;font-size:1rem;padding:9px 10px;border:1px solid var(--brd);border-radius:8px;background:var(--card);color:var(--txt);min-width:0}
+textarea{min-height:96px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible,summary:focus-visible{outline:3px solid var(--ambar);outline-offset:1px}
+fieldset{border:1px solid var(--brd);border-radius:10px;padding:12px;margin:0 0 14px;min-width:0}
+legend{font-family:var(--fh);font-weight:700;color:var(--verde);padding:0 6px}
+:root[data-theme="dark"] legend{color:#7fd0c8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) legend{color:#7fd0c8}}
+.btn{display:inline-block;background:var(--verde);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:700 1rem var(--fb);cursor:pointer}
+.btn.sec{background:transparent;color:var(--verde);border:2px solid var(--verde)}
+:root[data-theme="dark"] .btn.sec{color:#7fd0c8;border-color:#7fd0c8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.sec{color:#7fd0c8;border-color:#7fd0c8}}
+.btn.acc{background:var(--ambar);color:var(--tinta)}
+.btn.danger{background:var(--error)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.alert{border-radius:8px;padding:10px 12px;margin:8px 0;border-left:5px solid}
+.alert.alta{background:var(--errbg);border-color:var(--error)}
+.alert.media{background:var(--warnbg);border-color:var(--ambar)}
+.alert.info{background:var(--chip);border-color:var(--verde)}
+.alert.ok{background:var(--okbg);border-color:var(--exito)}
+.tip{font-size:.92rem;color:var(--txt2)}
+.chip{display:inline-block;background:var(--chip);color:var(--chip-txt);border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:600;margin:2px 4px 2px 0}
+.chip.bad{background:var(--errbg);color:var(--error)}
+:root[data-theme="dark"] .chip.bad{color:#ff9d94}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip.bad{color:#ff9d94}}
+.bubble{background:var(--chip);color:var(--chip-txt);border-radius:12px;padding:14px 16px;font-size:1.2rem;font-weight:600;margin:8px 0}
+.timer{font:700 1.3rem var(--fh);font-variant-numeric:tabular-nums}
+.bar{height:10px;background:var(--brd);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--verde)}
+.bar.low i{background:var(--error)}.bar.mid i{background:var(--ambar)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:8px 0}
+.metrics div small{display:flex;justify-content:space-between}
+.big{font:800 2.6rem var(--fh);color:var(--verde);line-height:1}
+:root[data-theme="dark"] .big{color:#7fd0c8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .big{color:#7fd0c8}}
+.disclaimer{background:var(--warnbg);border:3px solid var(--ambar);border-radius:10px;padding:14px;font-size:1.05rem;font-weight:600;margin:12px 0}
+.ans{background:var(--bg);border:1px solid var(--brd);border-radius:8px;padding:8px 10px;margin:6px 0;font-style:italic}
+details{border:1px solid var(--brd);border-radius:8px;padding:8px 12px;margin-bottom:8px;background:var(--card)}
+summary{cursor:pointer;font-weight:700}
+.check{display:flex;gap:10px;align-items:flex-start;padding:6px 0}
+.check input{width:22px;height:22px;margin-top:3px;flex:none}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:6px;border-bottom:1px solid var(--brd);vertical-align:top}
+.tablewrap{overflow-x:auto}
+footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
+.hidden{display:none!important}
+.chart{width:100%;height:auto;max-height:240px}
+@media(max-width:480px){h1{font-size:1.3rem}.big{font-size:2.2rem}.bubble{font-size:1.1rem}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Simulador de entrevista de visa B1/B2<small>Práctica en español · versión 1 · 3-nov-2026 · por AutoRise Solutions</small></h1>
+  <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
+</div></header>
+
+<main class="wrap">
+<div class="aviso-legal" role="note"><strong>Aviso:</strong> esta herramienta es de práctica. No es del gobierno de Estados Unidos ni de ningún consulado, no garantiza la visa y no es asesoría legal. La decisión la toma siempre el oficial consular. Practica con la verdad: tus respuestas deben ser coherentes con tu DS-160 y tus documentos reales.</div>
+
+<nav class="tabs" role="tablist" aria-label="Secciones">
+  <button role="tab" data-tab="perfil" aria-selected="true">1. Mi perfil</button>
+  <button role="tab" data-tab="entrevista" aria-selected="false">2. Entrevista</button>
+  <button role="tab" data-tab="resultados" aria-selected="false">3. Resultados</button>
+  <button role="tab" data-tab="historial" aria-selected="false">4. Historial</button>
+  <button role="tab" data-tab="plan" aria-selected="false">5. Mi plan</button>
+  <button role="tab" data-tab="saber" aria-selected="false">6. Debes saber</button>
+</nav>
+
+<!-- ============ PERFIL ============ -->
+<section class="panel on" id="tab-perfil">
+  <div class="card">
+    <h2>Tu perfil DS-160</h2>
+    <p class="tip">Captura lo mismo que declaraste en tu DS-160. El simulador compara tus respuestas contra estos datos. Se guarda solo en este navegador. Usa datos ficticios si solo quieres probar.</p>
+    <div class="row"><button class="btn acc" id="btnEjemplo" type="button">Cargar ejemplo</button><button class="btn sec" id="btnLimpiar" type="button">Limpiar formulario</button><span id="msgGuardado" class="tip" role="status"></span></div>
+  </div>
+  <form id="formPerfil" autocomplete="off" novalidate>
+  <fieldset><legend>Datos personales</legend><div class="grid">
+    <div><label for="nombre">Nombre</label><input id="nombre" type="text"></div>
+    <div><label for="edad">Edad</label><input id="edad" type="number" min="0" max="110"></div>
+    <div><label for="estadoCivil">Estado civil</label><select id="estadoCivil"><option value="soltero">Soltero(a)</option><option value="casado">Casado(a)</option><option value="union">Unión libre</option><option value="divorciado">Divorciado(a)</option><option value="viudo">Viudo(a)</option></select></div>
+    <div><label for="hijos">Número de hijos</label><input id="hijos" type="number" min="0" max="20"></div>
+    <div><label for="estudios">Estudios</label><input id="estudios" type="text"></div>
+  </div></fieldset>
+  <fieldset><legend>Trabajo</legend><div class="grid">
+    <div><label for="empresa">Empresa actual</label><input id="empresa" type="text"></div>
+    <div><label for="puesto">Puesto</label><input id="puesto" type="text"></div>
+    <div><label for="ingresoActual">Fecha de ingreso al trabajo actual</label><input id="ingresoActual" type="date"></div>
+    <div><label for="salario">Salario mensual (MXN)</label><input id="salario" type="number" min="0"></div>
+    <div><label for="trabAntEmpresa">Trabajo anterior (empresa)</label><input id="trabAntEmpresa" type="text"></div>
+    <div><label for="trabAntInicio">Trabajo anterior: inicio</label><input id="trabAntInicio" type="date"></div>
+    <div><label for="trabAntFin">Trabajo anterior: fin</label><input id="trabAntFin" type="date"></div>
+  </div></fieldset>
+  <fieldset><legend>Viaje</legend><div class="grid">
+    <div><label for="llegada">Fecha de llegada a EUA</label><input id="llegada" type="date"></div>
+    <div><label for="dias">Días de estancia</label><input id="dias" type="number" min="1" max="365"></div>
+    <div><label for="ciudad">Ciudad(es) de destino</label><input id="ciudad" type="text"></div>
+    <div><label for="hospedaje">Hospedaje</label><input id="hospedaje" type="text"></div>
+    <div><label for="quienPaga">¿Quién paga el viaje?</label><select id="quienPaga"><option value="yo">Yo</option><option value="familiar">Un familiar</option><option value="empresa">Mi empresa</option><option value="pareja">Mi pareja</option><option value="otro">Otra persona</option></select></div>
+    <div><label for="pagaDetalle">Detalle de quién paga <span class="h">Nombre o con qué recursos</span></label><input id="pagaDetalle" type="text"></div>
+    <div><label for="acompNombre">Acompañante (nombre) <span class="h">Vacío si viajas solo(a)</span></label><input id="acompNombre" type="text"></div>
+    <div><label for="acompRelacion">Relación con el acompañante</label><input id="acompRelacion" type="text"></div>
+    <div><label for="viajesPrev">Viajes anteriores <span class="h">Escribe "ninguno" si no has viajado</span></label><input id="viajesPrev" type="text"></div>
+    <div><label for="visaNegada">¿Visas negadas antes?</label><select id="visaNegada"><option value="no">No</option><option value="si">Sí</option></select></div>
+    <div><label for="familiaEUA">Familia en EUA <span class="h">Nombre, ciudad y estatus. Vacío si no tienes</span></label><input id="familiaEUA" type="text"></div>
+    <div><label for="redes">Redes sociales declaradas</label><input id="redes" type="text"></div>
+  </div></fieldset>
+  <fieldset><legend>Citas</legend><div class="grid">
+    <div><label for="consulado">Consulado</label><select id="consulado"><option>Guadalajara</option><option>Ciudad de México</option><option>Monterrey</option><option>Tijuana</option><option>Ciudad Juárez</option><option>Hermosillo</option><option>Matamoros</option><option>Mérida</option><option>Nogales</option><option>Nuevo Laredo</option></select></div>
+    <div><label for="citaFecha">Fecha de la cita</label><input id="citaFecha" type="date"></div>
+    <div><label for="citaHora">Hora de la cita</label><input id="citaHora" type="time"></div>
+    <div><label for="casFecha">Fecha del CAS</label><input id="casFecha" type="date"></div>
+    <div><label for="casHora">Hora del CAS</label><input id="casHora" type="time"></div>
+  </div></fieldset>
+  </form>
+  <div class="card">
+    <h2>Revisión antes de entrevistar</h2>
+    <div id="validaciones" aria-live="polite"></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="btnIrEntrevista" type="button">Ir a la entrevista</button></div>
+  </div>
+</section>
+
+<!-- ============ ENTREVISTA ============ -->
+<section class="panel" id="tab-entrevista">
+  <div class="card" id="entIntro">
+    <h2>Entrevista de práctica</h2>
+    <p>El cónsul te hará de 8 a 15 preguntas según tu perfil. Contesta corto y con la verdad: 1 a 3 frases.</p>
+    <div class="grid">
+      <div><label for="selLang">Idioma del cónsul</label><select id="selLang"><option value="es">Español (México)</option><option value="en">English</option></select></div>
+      <div><label for="selVoz">Voz del cónsul</label><select id="selVoz"><option value="on">Activada</option><option value="off">Solo texto</option></select></div>
+    </div>
+    <p class="tip" id="msgVoz"></p>
+    <div id="entMotivos" class="tip"></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="btnComenzar" type="button">Comenzar entrevista</button></div>
+  </div>
+  <div class="card hidden" id="entEnCurso">
+    <div class="row" style="justify-content:space-between"><strong id="entProgreso"></strong><span class="timer" id="entTimer" aria-label="Tiempo de la respuesta">00:00</span></div>
+    <div class="bar" aria-hidden="true"><i id="entBarra" style="width:0%"></i></div>
+    <div id="entSegTag"></div>
+    <div class="bubble" id="entPregunta" aria-live="polite"></div>
+    <div class="row"><button class="btn sec" id="btnRepetir" type="button">Repetir pregunta</button><button class="btn sec" id="btnMic" type="button">Responder con voz</button></div>
+    <p class="tip hidden" id="msgMic"></p>
+    <label for="entRespuesta" style="margin-top:10px">Tu respuesta</label>
+    <textarea id="entRespuesta" placeholder="Escribe tu respuesta o díctala con el micrófono del teclado"></textarea>
+    <div class="row" style="margin-top:10px"><button class="btn" id="btnEnviar" type="button">Enviar respuesta</button><button class="btn sec" id="btnAbandonar" type="button">Terminar sin evaluar</button></div>
+  </div>
+</section>
+
+<!-- ============ RESULTADOS ============ -->
+<section class="panel" id="tab-resultados">
+  <div id="resVacio" class="card"><h2>Resultados</h2><p>Aún no hay una práctica terminada. Completa una entrevista y aquí verás tu evaluación.</p></div>
+  <div id="resContenido" class="hidden"></div>
+</section>
+
+<!-- ============ HISTORIAL ============ -->
+<section class="panel" id="tab-historial">
+  <div class="card"><h2>Historial de prácticas</h2>
+    <p class="tip">Se guarda solo en este navegador. Mide tu avance día a día.</p>
+    <div id="histGrafica"></div><div id="histLista"></div>
+    <div class="row" style="margin-top:10px" id="histAcciones"><button class="btn danger" id="btnBorrarHist" type="button">Borrar historial</button></div>
+  </div>
+</section>
+
+<!-- ============ PLAN ============ -->
+<section class="panel" id="tab-plan">
+  <div class="card"><h2>Mi plan hasta la cita</h2><div id="planCuenta"></div><div id="planHoy"></div></div>
+  <div class="card"><h3>Rutina diaria</h3><div id="planRutina"></div></div>
+  <div class="card"><h3>Documentos para llevar</h3><p class="tip">Lleva todo impreso en una carpeta. Los estados de cuenta y la constancia laboral solo se muestran si el oficial los pide.</p><div id="chkDocs"></div></div>
+  <div class="card"><h3>Checklist del día de la cita</h3><div id="chkDia"></div></div>
+  <div class="card"><h3>Plan de traslado</h3><p class="tip">Ejemplo para una ruta de unas 3 horas hacia la ciudad del consulado. Las cifras son estimaciones, no son de fuentes oficiales: ajústalas a tu ruta.</p>
+    <div class="grid">
+      <div class="card" style="margin:0"><h3>A. Dormir allá la noche anterior</h3><p>Costo aprox. MXN 2,500 a 3,700. Riesgo de llegar tarde: muy bajo. Cansancio: bajo. Es la opción más segura: una cita tarda meses en volver a conseguirse.</p></div>
+      <div class="card" style="margin:0"><h3>B. Auto de madrugada</h3><p>Costo aprox. MXN 1,000 a 1,500. Riesgo: medio (tráfico, obras, estacionamiento; verifica si cobran en efectivo). Cansancio: alto.</p></div>
+      <div class="card" style="margin:0"><h3>C. Autobús de madrugada</h3><p>Costo aprox. MXN 1,700 a 1,900. Riesgo: medio (depende del traslado final en taxi o app). Cansancio: medio-alto.</p></div>
+    </div>
+    <p class="tip">Sea cual sea la opción: sal con margen, ten un plan B y no llegues más de 15 minutos antes del CAS (si la cita lo indica).</p>
+  </div>
+</section>
+
+<!-- ============ SABER ============ -->
+<section class="panel" id="tab-saber">
+  <div class="card"><h2>Lo que debes saber</h2>
+    <div class="alert info">La información de esta sección viene de fuentes no oficiales (medios y despachos de abogados) revisadas el 3-nov-2026. Verifícala siempre en los sitios oficiales del Departamento de Estado y de la embajada o consulado antes de decidir algo.</div>
+    <details open><summary>Sección 214(b) en simple</summary>
+      <p>La ley presume que todo solicitante quiere emigrar hasta que demuestre lo contrario. Para la B1/B2 necesitas mostrar tres cosas: un <strong>propósito</strong> temporal y permitido (turismo o negocios, no trabajo ni estudio), <strong>arraigo</strong> (razones reales para volver: trabajo, casa, familia, bienes, proyectos) y <strong>solvencia</strong> (que puedes pagar el viaje con recursos reales).</p>
+      <p>Una negativa 214(b) no tiene apelación. Se vuelve a solicitar con nueva DS-160, nuevo pago y nueva entrevista. No se encontró un plazo legal de espera, pero repetir sin cambios reales casi siempre da el mismo resultado. No es una inadmisibilidad ni requiere perdón.</p>
+    </details>
+    <details><summary>Formulario 221(g)</summary>
+      <p>Es una negativa temporal: tu caso queda "pendiente". Puede ser por documentos faltantes (el oficial te da una hoja con la lista) o por procesamiento administrativo, que puede tardar de semanas a meses. Puede venir junto con una 214(b).</p>
+    </details>
+    <details><summary>Qué pasa si te niegan la visa</summary>
+      <ul><li>Pide y lee con calma la hoja que te entregan: dice el motivo.</li><li>Antes de volver a solicitar, revisa qué cambió de verdad en tu trabajo, ingresos, familia o bienes, y qué tan claro fue tu propósito.</li><li>Nunca inventes vínculos ni documentos. Mentir o dar un dato falso importante a propósito puede causar una inadmisibilidad permanente.</li></ul>
+    </details>
+    <details><summary>Errores comunes</summary>
+      <ul><li>Respuestas memorizadas: suenan ensayadas. Conoce tus datos, no memorices frases.</li><li>Dar documentos sin que los pidan.</li><li>Contradecir la DS-160. Si algo cambió o hubo un error, corrígelo y dilo.</li><li>Hablar de más: historias y datos que no te preguntaron.</li><li>Decir "voy a buscar trabajo", "a ver si me quedo" o "voy a tomar un curso": no es turismo y rompe la presunción.</li><li>No declarar una red social en la DS-160: la solicitud pide las usadas en los últimos 5 años.</li></ul>
+    </details>
+    <details><summary>Si tu DS-160 tiene un error</summary>
+      <p>No se edita la DS-160 enviada: se llena una corregida (eso genera un número de confirmación nuevo), se actualiza el número en tu cita en el portal y se menciona con la verdad si el oficial pregunta. Lleva impresas la nueva y la original. No hay plazo oficial confirmado: hazlo cuanto antes y verifica en el portal oficial.</p>
+    </details>
+    <details><summary>Cambios recientes (2025 y 2026)</summary>
+      <ul><li>Desde el 2-sep-2025 casi todos los solicitantes van a entrevista presencial.</li><li>La B1/B2 no exige inglés: se puede atender en español.</li><li>Sobre revisión de redes sociales y el cobro del Visa Integrity Fee hay fuentes que se contradicen: confirma en fuentes oficiales.</li></ul>
+    </details>
+    <p class="tip">Fuentes principales (no oficiales, revisadas el 3-nov-2026): ViveUSA, Lighthouse, Atlys, NNU Immigration, Fragomen, Faegre Drinker. Fuente oficial del CAS: ais.usvisa-info.com.</p>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">Simulador de práctica. No es una herramienta del gobierno de EUA ni de ningún consulado, no garantiza la visa y no es asesoría legal. Tus datos se guardan solo en este navegador (localStorage); no se envían a ningún servidor.</div></footer>
+
+<script>
+"use strict";
+/* ======================================================================
+   UTILIDADES
+   ====================================================================== */
+const U = {
+  norm(s){ return (s==null?'':String(s)).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w\s.,$@/-]/g,' ').replace(/\s+/g,' ').trim(); },
+  esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
+  STOP:new Set(['para','como','sobre','empresa','sociedad','capital','variable','hotel','casa','airbnb','departamento','grupo','de','del','las','los','con','que','por','reservacion','reserva']),
+  tokens(s){ return U.norm(s).split(/[^a-z0-9]+/).filter(w=>(w.length>=4||/^\d+$/.test(w))&&!U.STOP.has(w)); },
+  frac(textN,toks){ if(!toks.length) return null; let n=0; toks.forEach(t=>{ if(textN.indexOf(t)>-1) n++; }); return n/toks.length; },
+  parseDate(s){ if(!s) return null; const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if(!m) return null; return new Date(+m[1],+m[2]-1,+m[3]); },
+  iso(d){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); },
+  today(){ const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),d.getDate()); },
+  addDays(d,n){ const r=new Date(d.getFullYear(),d.getMonth(),d.getDate()+n); return r; },
+  addMonths(d,n){ return new Date(d.getFullYear(),d.getMonth()+n,Math.min(d.getDate(),28)); },
+  diffDays(a,b){ return Math.round((b-a)/86400000); },
+  MES:['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],
+  fmt(d){ if(!d) return ''; return d.getDate()+'-'+U.MES[d.getMonth()]+'-'+d.getFullYear(); },
+  fmtHora(d){ return U.fmt(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); },
+  nextWeekday(d){ const r=new Date(d); while(r.getDay()===0||r.getDay()===6) r.setDate(r.getDate()+1); return r; },
+  clamp(n,a,b){ return Math.max(a,Math.min(b,n)); },
+  store:{
+    get(k,def){ try{ const v=localStorage.getItem(k); return v==null?def:JSON.parse(v); }catch(e){ return def; } },
+    set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
+    del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+  }
+};
+const K={perfil:'simvisa_perfil_v1',hist:'simvisa_historial_v1',checks:'simvisa_checks_v1',prefs:'simvisa_prefs_v1'};
+const TIP_VERDAD='Di la verdad, coherente con tu DS-160. Si hay un error en tu DS-160, corrígelo y dilo.';
+const TIP_DS160_ERROR='Si tu DS-160 tiene un error, llena una DS-160 corregida, actualiza el número en tu cita y menciónalo con la verdad.';
+
+/* ======================================================================
+   MOTOR DEL CÓNSUL
+   ----------------------------------------------------------------------
+   Toda la lógica de la entrevista vive en este objeto. No toca el DOM.
+   Interfaz (cuatro funciones):
+     elegirPreguntas(perfil)                  -> { cola:[pregunta...], motivos:[texto...] }
+     siguientePregunta(estado, respuestaTxt)  -> pregunta | null   (puede insertar un seguimiento)
+     evaluarRespuesta(pregunta, txt, perfil, ctx) -> { claridad, brevedad, coherencia, seguridad,
+                                                       puntaje, alertas:[{texto,grave}], tips:[...], notas:[...] }
+     evaluarSesion(respuestas, perfil)        -> resumen general con puntaje y probabilidad de práctica
+
+   COMO REEMPLAZARLO POR LA CLAUDE API (v2):
+   - Hazlo desde un servidor propio (backend o función en la nube). NUNCA pongas una clave de API
+     en este archivo ni en ningún HTML: cualquiera podría verla. El navegador llama a TU servidor,
+     y tu servidor llama a la API con la clave guardada como variable de entorno.
+   - elegirPreguntas(perfil): se puede quedar igual, o sustituirse por una llamada que reciba el perfil
+     y devuelva la lista inicial de preguntas.
+   - siguientePregunta(estado, respuesta): el modelo recibe el perfil, el historial de la conversación y
+     la respuesta, y devuelve la siguiente pregunta (o null para terminar). El system prompt debe indicar:
+     "Eres un oficial consular que entrevista para visa B1/B2. Haz preguntas cortas, una a la vez, con
+     seguimiento según lo que diga la persona y al menos una pregunta de coherencia contra el perfil.
+     Nunca enseñes a mentir." Debe ser async (await fetch('/tu-servidor/siguiente', ...)).
+   - evaluarRespuesta(...): se puede pedir al modelo una salida JSON con la misma forma que devuelve
+     hoy esta función (claridad, brevedad, coherencia, seguridad, alertas, tips). Mantén las reglas
+     locales (regex de alertas) como segunda opinión: son gratis y no fallan.
+   - Voz: la v2 puede reemplazar speechSynthesis y Web Speech por un servicio de voz en tiempo real.
+   - Todo tip debe conservar el principio: la respuesta es la verdad, coherente con la DS-160.
+   ====================================================================== */
+const MotorConsul = (function(){
+  const NUMW={un:1,una:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veintiuno:21,treinta:30,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,twelve:12,fourteen:14,fifteen:15,twenty:20,thirty:30};
+  const NUMALT=Object.keys(NUMW).sort((a,b)=>b.length-a.length).join('|');
+
+  function parseDias(t){
+    t=U.norm(t); const out=[];
+    const re=new RegExp('(\\d+|'+NUMALT+')\\s*(dias?|semanas?|meses|mes|noches?|days?|weeks?|months?|nights?)','g');
+    let m;
+    while((m=re.exec(t))){
+      const n=/^\d+$/.test(m[1])?+m[1]:NUMW[m[1]]; const u=m[2];
+      out.push(/^(sem|week)/.test(u)?n*7:/^(mes|month)/.test(u)?n*30:n);
+    }
+    if(/quincena/.test(t)) out.push(15);
+    if(!out.length){ const d=/\b(\d{1,3})\b/.exec(t); if(d&&+d[1]<=365) out.push(+d[1]); }
+    return out;
+  }
+  function parseMonto(t){
+    t=U.norm(t).replace(/(\d)[,](\d{3})/g,'$1$2').replace(/(\d)[.](\d{3})(?!\d)/g,'$1$2');
+    const out=[]; const re=/(\d+(?:\.\d+)?)\s*(mil|k)?/g; let m;
+    while((m=re.exec(t))){ let v=parseFloat(m[1]); if(m[2]) v*=1000; if(v>=100) out.push(v); }
+    return out;
+  }
+  function parseAnios(t){ const out=[]; const re=/\b(19|20)\d{2}\b/g; let m; t=U.norm(t); while((m=re.exec(t))) out.push(+m[0]); return out; }
+
+  // ---------- Alertas generales ----------
+  const PATRONES=[
+    {re:/(buscar|conseguir|encontrar|busco)\s+(un\s+)?(trabajo|empleo|chamba)|look(ing)? for a job|find a job/, t:'Mencionaste buscar trabajo: la B1/B2 es solo turismo o negocios.', g:true},
+    {re:/trabajar\s+(alla|en\s+(estados|eua|ee ?uu|usa|orlando|houston|texas|california|florida))|work there|work in the (us|united)|chambear|trabajito/, t:'Mencionaste trabajar en EUA: con visa de turista no se puede.', g:true},
+    {re:/quedarme|quedarnos|me quedare|me quedaria|me voy a quedar|me quiero quedar|me quedo (alla|en (estados|eua|ee ?uu|usa))|a ver si me quedo|stay there for good|stay permanently/, t:'Suena a quedarte en EUA: eso rompe la presunción de regreso.', g:true},
+    {re:/vivir\s+(alla|en estados|en eua)|irme a vivir|mudarme|radicar|live there|move there/, t:'Mencionaste vivir en EUA: la visa B1/B2 es temporal.', g:true},
+    {re:/estudiar|inscribirme|tomar un curso|hacer un curso|study there|enroll/, t:'Mencionaste estudiar: la B1/B2 no es visa de estudiante.', g:true},
+    {re:/renunciar|renuncie|renuncio|dejar mi trabajo|quit my job/, t:'Mencionaste renunciar o dejar tu trabajo: debilita tu arraigo.', g:true},
+    {re:/a ver que pasa|ya veremos|ya vere|depende de como me vaya|we.ll see/, t:'Respuesta vaga ("a ver qué pasa"): el propósito debe ser concreto.', g:false},
+    {re:/\bno se\b|no lo se|ni idea|no recuerdo|no me acuerdo|i don.?t know|no idea|i don.?t remember/, t:'Dijiste "no sé" o "no recuerdo": conoce tus propios datos.', g:false}
+  ];
+  const NEGACION=/no (pienso|voy a|planeo|quiero|me voy a|tengo intencion de|tengo planes de)\s+(quedarme|trabajar|estudiar|vivir|buscar trabajo|mudarme|renunciar)|sin (quedarme|trabajar)|(i do not|i don.?t|i won.?t) (plan to )?(stay|work|study|live)/g;
+  const MULETILLAS=/\b(eh+|em+|este|pues|o sea|como que|creo que|tal vez|quiza|quizas|mas o menos|supongo|a lo mejor|digamos|igual y|i think|maybe|probably|kind of|um+|uh+)\b/g;
+
+  // "no me voy a quedar", "no pienso quedarme": negación (no es alerta)
+  const NEG_QUEDAR=/\bno\s+(me\s+)?(voy a|pienso|planeo|quiero|pretendo|tengo intencion de)\s+(me\s+)?quedar(me|nos)?\b|\bno\s+me\s+quedar(e|ia)\b/g;
+  const QUEDAR='(?:me voy a quedar|me quiero quedar|me quedare|me quedaria|quedarme|quedarnos|me quedo)';
+  const RE_QDUR=new RegExp(QUEDAR+'\\s+(?:\\w+\\s+)?(?:\\d+|'+NUMALT+')\\s*(?:dias?|semanas?|noches?|mes|days?|weeks?|nights?)\\b','g');
+  const RE_QLUGAR=new RegExp(QUEDAR+'\\s+(?:en|con|donde)\\s+((?:\\w+\\s*){1,3})','g');
+  const MAL_LUGAR=/estados|eua|ee ?uu|usa|alla|vivir|siempre|definitiv/;
+  function neutralizarQuedar(t){
+    t=t.replace(NEG_QUEDAR,' ');
+    // quedarse una duración corta (90 días o menos) no es alerta; más de 90 sí lo sigue siendo
+    t=t.replace(RE_QDUR,m=>{ const d=parseDias(m); return d.length&&d.every(x=>x<=90)?' ':m; });
+    // quedarse en un lugar concreto (hotel, casa de, con mi...) no es alerta, salvo que sea "en Estados Unidos / allá / a vivir"
+    t=t.replace(RE_QLUGAR,(m,lugar)=>MAL_LUGAR.test(lugar)?m:' ');
+    return t;
+  }
+  function detectarAlertas(tn){
+    const limpio=neutralizarQuedar(tn.replace(NEGACION,' ')); const out=[];
+    PATRONES.forEach(p=>{ if(p.re.test(limpio)) out.push({texto:p.t,grave:p.g}); });
+    const dias=parseDias(limpio);
+    const largo=/(\d+|\w+)\s*(dias?|semanas?|meses|mes|days?|weeks?|months?)\b/.test(limpio) && dias.some(d=>d>90);
+    if(largo) out.push({texto:'Mencionaste una estancia de más de 90 días: para turismo suena a que no regresarás.',grave:true});
+    return out;
+  }
+
+  // ---------- Verificadores de coherencia con el perfil ----------
+  // Cada uno recibe (textoNormalizado, perfil, ctx) y devuelve null (no verificable) o {score, alertas:[txt], notas:[txt]}.
+  const CHK={
+    dias(tn,p,ctx,q){
+      const d=parseDias(tn); if(!d.length) return {score:45,alertas:[],notas:['No dijiste cuántos días: responde con un número.']};
+      const ok=d.some(x=>Math.abs(x-p.dias)<=1);
+      const r={score:ok?100:15,alertas:[],notas:[]};
+      if(!ok) r.alertas.push('Días distintos a tu perfil: dijiste '+d[0]+' y tu DS-160 dice '+p.dias+'.');
+      if(q&&q.refiere&&ctx.previas[q.refiere]){ const prev=parseDias(ctx.previas[q.refiere]);
+        if(prev.length&&!d.some(x=>prev.some(y=>Math.abs(x-y)<=1))){ r.score=Math.min(r.score,10); r.alertas.push('Cambiaste el dato: antes dijiste '+prev[0]+' días y ahora '+d[0]+'.'); } }
+      return r;
+    },
+    trabajo(tn,p){
+      const fe=U.frac(tn,U.tokens(p.empresa)), fp=U.frac(tn,U.tokens(p.puesto));
+      const e=fe==null?1:fe, pu=fp==null?1:fp; const score=Math.round(50*Math.min(1,e*1.2)+50*Math.min(1,pu*1.2));
+      const r={score:Math.min(100,score),alertas:[],notas:[]};
+      if(e<0.5) r.notas.push('No mencionaste el nombre de tu empresa como en tu perfil ('+p.empresa+').');
+      if(pu<0.5) r.notas.push('No mencionaste tu puesto como en tu perfil ('+p.puesto+').');
+      if(r.score<50) r.alertas.push('Tu empresa o puesto no coincide con lo que declaraste.');
+      return r;
+    },
+    puesto(tn,p,ctx,q){ return CHK.trabajo(tn,p,ctx,q); },
+    ingreso(tn,p,ctx,q){
+      const ing=U.parseDate(p.ingresoActual); if(!ing) return null; const hoy=U.today();
+      const ys=parseAnios(tn); const an=/(\d+|[a-z]+)\s*(anos?|years?)/.exec(tn); const ms=/(\d+)\s*(meses|months)/.exec(tn);
+      let r=null;
+      if(ys.length){ const ok=ys.includes(ing.getFullYear()); r={score:ok?100:20,alertas:ok?[]:['Año de ingreso distinto al perfil: dijiste '+ys[0]+' y tu DS-160 dice '+ing.getFullYear()+'.'],notas:[]}; }
+      else if(an){ const n=/^\d+$/.test(an[1])?+an[1]:NUMW[an[1]]; if(n!=null){ const esp=U.diffDays(ing,hoy)/365.25; const ok=Math.abs(n-esp)<=1; r={score:ok?100:25,alertas:ok?[]:['Antigüedad distinta al perfil: dijiste '+n+' años y según tu fecha de ingreso son unos '+esp.toFixed(1)+'.'],notas:[]}; } }
+      else if(ms){ const esp=U.diffDays(ing,hoy)/30.4; const ok=Math.abs(+ms[1]-esp)<=3; r={score:ok?100:25,alertas:ok?[]:['Antigüedad distinta al perfil.'],notas:[]}; }
+      if(!r) return {score:50,alertas:[],notas:['Menciona el año o cuánto tiempo llevas en tu trabajo.']};
+      if(q&&q.refiere&&ctx.previas[q.refiere]){ const py=parseAnios(ctx.previas[q.refiere]); if(py.length&&ys.length&&!ys.some(y=>py.includes(y))){ r.score=Math.min(r.score,10); r.alertas.push('Cambiaste el dato: antes dijiste '+py[0]+' y ahora '+ys[0]+'.'); } }
+      return r;
+    },
+    trabAnterior(tn,p){
+      const ys=parseAnios(tn); const tiene=p.trabAntEmpresa||p.trabAntInicio||p.trabAntFin;
+      if(!tiene){ return null; }
+      if(/^(no|ninguno|nunca)\b/.test(tn)&&!ys.length) return {score:20,alertas:['Dijiste que no tuviste otro trabajo, pero tu perfil lista uno.'],notas:[]};
+      const validos=[p.trabAntInicio,p.trabAntFin,p.ingresoActual].map(x=>U.parseDate(x)).filter(Boolean).map(d=>d.getFullYear());
+      if(!ys.length){ const f=U.frac(tn,U.tokens(p.trabAntEmpresa)); return {score:f&&f>0?85:55,alertas:[],notas:['Menciona cuándo saliste, con año, igual que en tu DS-160.']}; }
+      const mal=ys.filter(y=>!validos.includes(y));
+      return mal.length?{score:20,alertas:['Año distinto a tu perfil: dijiste '+mal[0]+' (tu DS-160 tiene '+validos.join(', ')+').'],notas:[]}:{score:100,alertas:[],notas:[]};
+    },
+    paga(tn,p,ctx,q){
+      const K2={yo:/\byo\b|mis ahorros|mi dinero|mi sueldo|mi salario|mis recursos|pago yo|por mi cuenta|myself|my savings|i pay|i will pay/,
+        familiar:/mi (tio|tia|madre|mama|padre|papa|hermano|hermana|primo|prima|familia|abuel\w+|suegr\w+)|my (uncle|aunt|mother|father|brother|sister|family)/,
+        empresa:/empresa|mi trabajo|mi jefe|company|my employer/, pareja:/esposo|esposa|pareja|novi\w+|marido|husband|wife|partner/,
+        otro:/amig\w+|patrocin\w+|invit\w+|friend|sponsor/};
+      const hits=Object.keys(K2).filter(k=>K2[k].test(tn));
+      if(!hits.length) return {score:55,alertas:[],notas:['Di claramente quién paga el viaje.']};
+      const det=U.frac(tn,U.tokens(p.pagaDetalle));
+      if(hits.includes(p.quienPaga)||(det&&det>0)){
+        const r={score:100,alertas:[],notas:[]};
+        if(q&&q.refiere&&ctx.previas[q.refiere]){ const pt=U.norm(ctx.previas[q.refiere]); const ph=Object.keys(K2).filter(k=>K2[k].test(pt)); if(ph.length&&!ph.some(h=>hits.includes(h))){ r.score=10; r.alertas.push('Cambiaste el dato: antes dijiste que paga otra persona.'); } }
+        return r;
+      }
+      return {score:15,alertas:['Dijiste que paga "'+hits[0]+'", pero en tu perfil paga: '+({yo:'tú',familiar:'un familiar',empresa:'tu empresa',pareja:'tu pareja',otro:'otra persona'})[p.quienPaga]+'.'],notas:[]};
+    },
+    hospedaje(tn,p){
+      const pn=U.norm(p.hospedaje); const cls=s=>/hotel|airbnb|hostal|motel|resort|\binn\b/.test(s)?'hotel':/casa de|con mi|familiar|\btia\b|\btio\b|primo|amig|home|my (aunt|uncle)/.test(s)?'casa':null;
+      const f=U.frac(tn,U.tokens(p.hospedaje)); const a=cls(pn), b=cls(tn);
+      if(f&&f>0) return {score:100,alertas:[],notas:[]};
+      if(a&&b&&a===b) return {score:80,alertas:[],notas:['Menciona el nombre o la dirección tal como en tu perfil.']};
+      if(a&&b&&a!==b) return {score:25,alertas:['El tipo de hospedaje no coincide con tu perfil ('+p.hospedaje+').'],notas:[]};
+      return {score:55,alertas:[],notas:['Menciona dónde te hospedas tal como en tu perfil.']};
+    },
+    acompanante(tn,p){
+      const solo=/\b(solo|sola|sin nadie|alone|by myself|nobody)\b/.test(tn);
+      const con=/\bcon (mi|un|una|unos|mis|amig)|acompan|viajo con|together|with my|with a\b/.test(tn);
+      if(!p.acompNombre){ if(solo) return {score:100,alertas:[],notas:[]}; if(con) return {score:20,alertas:['Dijiste que viajas acompañado, pero en tu perfil viajas solo(a).'],notas:[]}; return {score:60,alertas:[],notas:[]}; }
+      const f=U.frac(tn,U.tokens(p.acompNombre).concat(U.tokens(p.acompRelacion)));
+      if(f&&f>0) return {score:100,alertas:[],notas:[]};
+      if(solo) return {score:20,alertas:['Dijiste que viajas solo(a), pero en tu perfil viaja contigo '+p.acompNombre+'.'],notas:[]};
+      return {score:65,alertas:[],notas:['Menciona el nombre y la relación de tu acompañante como en tu DS-160.']};
+    },
+    salario(tn,p){
+      const m=parseMonto(tn); if(!m.length) return {score:45,alertas:[],notas:['No diste una cifra.']};
+      const ok=m.some(x=>Math.abs(x-p.salario)<=p.salario*0.15);
+      return ok?{score:100,alertas:[],notas:[]}:{score:15,alertas:['Monto distinto al perfil: dijiste '+m[0].toLocaleString('es-MX')+' y tu perfil dice '+Number(p.salario).toLocaleString('es-MX')+' al mes.'],notas:[]};
+    },
+    ciudad(tn,p){ const f=U.frac(tn,U.tokens(p.ciudad.replace(/,/g,' ')));
+      if(f==null) return null; return f>0?{score:100,alertas:[],notas:[]}:{score:45,alertas:[],notas:['En tu perfil el destino es '+p.ciudad+'.']}; },
+    regreso(tn,p){
+      const ll=U.parseDate(p.llegada); if(!ll) return null; const ret=U.addDays(ll,p.dias);
+      const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      const mencion=meses.map((m,i)=>tn.indexOf(m)>-1?i:-1).filter(i=>i>-1);
+      if(mencion.length){ const ok=mencion.includes(ret.getMonth())||mencion.includes(ll.getMonth()); return ok?{score:100,alertas:[],notas:[]}:{score:25,alertas:['La fecha de regreso no coincide con tu perfil (llegada + '+p.dias+' días = '+U.fmt(ret)+').'],notas:[]}; }
+      const d=parseDias(tn); if(d.length&&/\d/.test(tn)){ const ok=d.some(x=>Math.abs(x-p.dias)<=1); return ok?{score:100,alertas:[],notas:[]}:{score:25,alertas:['Días distintos a tu perfil.'],notas:[]}; }
+      return null;
+    },
+    civil(tn,p){
+      const KC={soltero:/solter|single/,casado:/casad|espos|marido|married/,union:/union libre|pareja|novi|partner/,divorciado:/divorci/,viudo:/viud/};
+      const claves=Object.keys(KC).filter(k=>KC[k].test(tn)); const res=[]; const al=[];
+      if(claves.length){ const ok=claves.includes(p.estadoCivil)||(p.estadoCivil==='union'&&claves.includes('casado')); res.push(ok?100:20); if(!ok) al.push('Estado civil distinto a tu perfil.'); }
+      const nh=/no tengo hijos|sin hijos|ningun hijo|no children|no kids|don.?t have (any )?(children|kids)/.test(tn);
+      const sh=/(\d+|un|una|dos|tres|cuatro)\s*hij|\bhijos?\b|\bhijas?\b|children|kids/.test(tn)&&!nh;
+      if(nh||sh){ const ok=nh?(+p.hijos===0):(+p.hijos>0); res.push(ok?100:20); if(!ok) al.push('Número de hijos distinto a tu perfil ('+p.hijos+').'); }
+      if(!res.length) return {score:60,alertas:[],notas:['Responde estado civil e hijos.']};
+      return {score:Math.round(res.reduce((a,b)=>a+b,0)/res.length),alertas:al,notas:[]};
+    },
+    viajes(tn,p){
+      const ning=!p.viajesPrev||/ning|nunca|^no\b|no he/.test(U.norm(p.viajesPrev));
+      const nunca=/nunca|no he|primera vez|ninguno|never|first time|^no\b/.test(tn); const si=/\bsi\b|he viajado|fui|estuve|visit|i have|yes/.test(tn)&&!nunca;
+      if(ning){ if(nunca) return {score:100,alertas:[],notas:[]}; if(si) return {score:20,alertas:['Dijiste que has viajado, pero tu perfil dice que no. No haber viajado no es malo: dilo con naturalidad.'],notas:[]}; return {score:60,alertas:[],notas:[]}; }
+      if(nunca) return {score:20,alertas:['Dijiste que nunca has viajado, pero tu perfil lista viajes: '+p.viajesPrev+'.'],notas:[]};
+      return {score:si?100:60,alertas:[],notas:[]};
+    },
+    negada(tn,p){
+      const no=/\bno\b|nunca|never|ninguna/.test(tn)&&!/me nega|denied|refus/.test(tn); const si=/\bsi\b|me nega|denied|refus|yes/.test(tn);
+      if(p.visaNegada==='no'){ if(no) return {score:100,alertas:[],notas:[]}; if(si) return {score:15,alertas:['Dijiste que te negaron una visa, pero tu perfil dice que no.'],notas:[]}; }
+      else { if(si) return {score:100,alertas:[],notas:[]}; if(no) return {score:10,alertas:['Dijiste que no te han negado visa, pero tu perfil dice que sí. Ocultar una negativa es grave.'],notas:[]}; }
+      return {score:60,alertas:[],notas:[]};
+    },
+    famEUA(tn,p){
+      const tiene=!!p.familiaEUA.trim(); const no=/\bno\b|ninguno|nadie|none|no tengo/.test(tn)&&!/\bsi\b|mi (tia|tio|primo|hermano)/.test(tn);
+      const fam=/\bsi\b|tia|tio|primo|prima|hermano|hermana|madre|padre|abuel|familia|uncle|aunt|cousin|brother|sister|family|yes/.test(tn);
+      if(!tiene){ if(no) return {score:100,alertas:[],notas:[]}; if(fam) return {score:20,alertas:['Mencionas familia en EUA que no declaraste en tu perfil.'],notas:[]}; return {score:60,alertas:[],notas:[]}; }
+      if(no) return {score:15,alertas:['Dijiste que no tienes familia en EUA, pero tu perfil lista: '+p.familiaEUA+'.'],notas:[]};
+      return {score:fam?100:55,alertas:[],notas:fam?[]:['Menciona a tu familiar, dónde vive y su estatus.']};
+    },
+    redes(tn,p){
+      const lista=['instagram','facebook','tiktok','twitter','linkedin','youtube','snapchat','x'];
+      const pn=U.norm(p.redes); const menc=lista.filter(r=>r==='x'?/\bx\b/.test(tn):tn.indexOf(r)>-1);
+      const extra=menc.filter(r=>r==='x'?!/\bx\b|twitter/.test(pn):pn.indexOf(r)<0);
+      if(extra.length) return {score:30,alertas:['Mencionas una red ('+extra[0]+') que no declaraste en tu DS-160. Decláralo/corrígelo y dilo con la verdad.'],notas:[]};
+      if(pn&&/\bno uso\b|ninguna|no tengo/.test(tn)) return {score:20,alertas:['Dijiste que no usas redes, pero tu perfil declara: '+p.redes+'.'],notas:[]};
+      return menc.length?{score:100,alertas:[],notas:[]}:{score:65,alertas:[],notas:[]};
+    },
+    estudios(tn,p){ const f=U.frac(tn,U.tokens(p.estudios)); if(f==null) return null; return f>0?{score:100,alertas:[],notas:[]}:{score:55,alertas:[],notas:['En tu perfil: '+p.estudios+'.']}; }
+  };
+
+  // ---------- Banco de preguntas ----------
+  // Campos: tema (A-M de la base de conocimiento), orden, es/en, espera (regex de lo que debería contener),
+  // corta (sí/no), verifica (clave de CHK), busca, tip, seg (seguimientos).
+  function Q(id,tema,orden,es,en,o){ return Object.assign({id,tema,orden,es,en},o||{}); }
+  const SEG_SINO=/\b(si|no|yes)\b/;
+  const bancoPreguntas={
+    q_proposito:Q('q_proposito','A',10,'¿Cuál es el propósito de su viaje a Estados Unidos?','What is the purpose of your trip to the United States?',{espera:/turis|vacac|pasear|conocer|visit|negocio|conferencia|congreso|descans|tourism|vacation|business|trip|travel|vengo|voy a/,busca:'Un propósito concreto, corto y permitido (turismo o negocios).',tip:'Di el propósito en una frase y que coincida con tu DS-160. Sin "a ver qué pasa".',
+      seg:[{re:/negocio|reunion|conferencia|congreso|junta|business|meeting|conference/,id:'s_negocio',es:'¿Con qué empresa o evento se va a reunir y quién lo invitó?',en:'Which company or event will you attend, and who invited you?'}]}),
+    q_porque_ahora:Q('q_porque_ahora','A',12,'¿Por qué quiere viajar ahora?','Why do you want to travel now?',{busca:'Una razón natural para esta fecha.',tip:'Una razón verdadera y simple (vacaciones aprobadas, fecha especial). No inventes urgencias.'}),
+    q_lugares:Q('q_lugares','B',20,'¿A qué ciudades o lugares va a viajar?','Which cities or places will you visit?',{verifica:'ciudad',busca:'Itinerario que suene a turismo.',tip:'Nombra los lugares de tu plan real, los mismos de tu DS-160.'}),
+    q_tiempo:Q('q_tiempo','B',22,'¿Cuánto tiempo se va a quedar?','How long will you stay?',{verifica:'dias',espera:/\d|dia|semana|mes|day|week|month|quincena|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce|catorce|quince|veinte/,busca:'Viaje corto y con regreso claro, igual que la DS-160.',tip:'Di el mismo número de días de tu DS-160. Conócelo de memoria.'}),
+    q_boletos:Q('q_boletos','B',24,'¿Ya compró sus boletos de avión o reservó hotel?','Have you bought your plane tickets or booked a hotel?',{corta:true,espera:SEG_SINO,busca:'Viaje planeado.',tip:'Contesta sí o no con la verdad. No es obligatorio comprar boletos antes de la entrevista; no compres de más por miedo.'}),
+    q_regreso:Q('q_regreso','B',26,'¿Cuándo planea regresar a México?','When do you plan to return to Mexico?',{verifica:'regreso',busca:'Fecha de regreso clara.',tip:'Di la fecha de regreso que declaraste (llegada más días de estancia).'}),
+    q_hospedaje:Q('q_hospedaje','C',30,'¿Dónde se va a hospedar?','Where will you stay?',{verifica:'hospedaje',busca:'Que el hospedaje coincida con la DS-160.',tip:'Nombre del lugar o dirección tal como en tu DS-160.',
+      seg:[{re:/casa de|con mi|familiar|tia|tio|primo|amig|with my/,id:'s_dir',es:'¿Me puede dar la dirección?',en:'Can you give me the address?',verifica:'hospedaje'}]}),
+    q_acompanante:Q('q_acompanante','D',40,'¿Viaja solo o con alguien?','Are you traveling alone or with someone?',{verifica:'acompanante',busca:'Quién viaja y que cuadre con quién paga y dónde se hospeda.',tip:'Si viajas acompañado, di nombre y relación; igual que en tu DS-160.',
+      seg:[{re:/amig|compan|con mi|primo|prima|hermano|hermana|novi|espos|pareja|familia|colega|with my|friend/,not:/\b(solo|sola|alone)\b/,id:'s_acomp',es:'¿Quién es esa persona, a qué se dedica y cuál es su relación con usted?',en:'Who is that person, what do they do, and what is your relationship?',verifica:'acompanante'}]}),
+    q_trabajo:Q('q_trabajo','E',50,'¿Dónde trabaja y cuál es su puesto?','Where do you work and what is your position?',{verifica:'trabajo',busca:'Arraigo laboral verdadero y comprobable.',tip:'Empresa y puesto exactamente como en tu DS-160.',
+      seg:[{re:/negocio propio|mi negocio|mi empresa|independiente|freelance|own business/,id:'s_negocio_propio',es:'¿Desde cuándo tiene su negocio y cuántas personas trabajan con usted?',en:'How long have you had your business and how many people work with you?'}]}),
+    q_desdecuando:Q('q_desdecuando','E',52,'¿Desde cuándo trabaja ahí?','How long have you worked there?',{verifica:'ingreso',busca:'Antigüedad igual a la DS-160.',tip:'Di el año (y mes si lo recuerdas) de tu ingreso. Conoce tus fechas; si hay un error en tu DS-160, corrígelo y dilo.'}),
+    q_funciones:Q('q_funciones','E',54,'¿Qué funciones tiene en su trabajo?','What are your duties?',{busca:'Que sepas explicar lo que haces.',tip:'Explica en 1 o 2 frases lo que haces, sin tecnicismos.'}),
+    q_permiso:Q('q_permiso','E',56,'¿Su trabajo aprobó el viaje? ¿Cuántos días de permiso tiene?','Did your employer approve the trip? How many days off do you have?',{busca:'Permiso real para viajar.',tip:'Solo di que tienes permiso si es verdad. Ten a la mano la constancia, pero no la entregues si no la piden.'}),
+    q_trabAnterior:Q('q_trabAnterior','E',58,'¿Trabajó en otro lugar antes? ¿Cuándo salió de ahí?','Did you work somewhere else before? When did you leave?',{verifica:'trabAnterior',busca:'Fechas de trabajo que cuadren sin empalmes.',tip:'Fechas exactas como en tu DS-160. Si tus fechas no cuadran por un error, corrígelo y dilo con la verdad.'}),
+    q_quienpaga:Q('q_quienpaga','F',60,'¿Quién paga su viaje?','Who is paying for your trip?',{verifica:'paga',busca:'Viaje pagable con recursos reales.',tip:'Di quién paga, igual que en tu DS-160.',
+      seg:[{re:/mi (tio|tia|madre|mama|padre|papa|hermano|hermana|primo|prima|familia|esposo|esposa|pareja)|amig|my (uncle|aunt|mother|father|family)|friend/,not:/\byo\b|mis ahorros|myself/,id:'s_patrocinador',es:'¿Y por qué esa persona paga su viaje? ¿A qué se dedica?',en:'And why is that person paying for your trip? What do they do?'}]}),
+    q_salario:Q('q_salario','F',62,'¿Cuánto gana al mes?','How much do you earn per month?',{verifica:'salario',espera:/\d|mil|peso|mxn|thousand/,busca:'Cifras que cuadren con el costo del viaje.',tip:'Di tu ingreso real mensual, igual que en tu DS-160.'}),
+    q_costo:Q('q_costo','F',64,'¿Cuánto cuesta su viaje en total y cómo lo va a pagar?','How much will the trip cost in total and how will you pay for it?',{busca:'Que el costo sea razonable frente a tus ingresos.',tip:'Da una cifra aproximada y la fuente real del dinero (ahorros, salario).'}),
+    q_ahorros:Q('q_ahorros','F',66,'¿Tiene ahorros?','Do you have savings?',{corta:true,espera:SEG_SINO,busca:'Solvencia real.',tip:'Responde con la verdad, sin inflar cifras. No entregues estados de cuenta si no los piden.'}),
+    q_estadoCivil:Q('q_estadoCivil','G',70,'¿Está casado o tiene pareja? ¿Tiene hijos?','Are you married or do you have a partner? Do you have children?',{verifica:'civil',busca:'Arraigo familiar.',tip:'Estado civil e hijos tal como en tu DS-160, en una frase.'}),
+    q_regresa:Q('q_regresa','G',72,'¿Qué lo hace regresar a México?','What will make you come back to Mexico?',{busca:'Razones concretas para volver.',tip:'Menciona razones reales y verificables: trabajo, familia, casa, proyectos. No inventes vínculos.'}),
+    q_noquedarse:Q('q_noquedarse','G',74,'¿Cómo sabemos que no se va a quedar?','How do we know you will not stay?',{busca:'Intención clara de regreso.',tip:'Responde con calma y con hechos: fecha de regreso, trabajo, familia. Sin ponerte a la defensiva.'}),
+    q_proyectos:Q('q_proyectos','G',76,'¿Qué planes tiene en México después del viaje?','What plans do you have in Mexico after the trip?',{busca:'Proyectos que te esperan.',tip:'Un plan real y concreto, en una o dos frases.'}),
+    q_famEUA:Q('q_famEUA','H',80,'¿Tiene familiares en Estados Unidos?','Do you have family in the United States?',{verifica:'famEUA',busca:'Si hay motivo para quedarse y el estatus de la familia.',tip:'Si tienes, dilo con naturalidad y que coincida con tu DS-160. Tener familia en EUA no es un delito.',
+      seg:[{re:/\bsi\b|tia|tio|primo|prima|hermano|hermana|madre|padre|abuel|familia|yes|uncle|aunt|cousin/,not:/^no\b|no tengo|ninguno/,id:'s_estatus',es:'¿Qué estatus migratorio tiene esa persona y a qué se dedica?',en:'What is that person’s immigration status and what do they do?'}]}),
+    q_seQuedaCon:Q('q_seQuedaCon','H',84,'¿Se va a quedar con ellos?','Will you stay with them?',{corta:true,espera:SEG_SINO,busca:'Dónde te hospedas.',tip:'Responde con la verdad y que cuadre con el hospedaje de tu DS-160.'}),
+    q_estudios:Q('q_estudios','I',90,'¿Dónde estudió y qué título tiene?','Where did you study and what degree do you have?',{verifica:'estudios',busca:'Coherencia con el perfil.',tip:'Escuela y título tal como los declaraste.'}),
+    q_planEstudiar:Q('q_planEstudiar','I',92,'¿Planea estudiar en Estados Unidos?','Do you plan to study in the United States?',{corta:true,espera:SEG_SINO,busca:'Que no planees estudiar con visa de turista.',tip:'Si tu plan es turismo, di "no" con claridad. Si quieres estudiar, esa no es la visa.'}),
+    q_viajesPrev:Q('q_viajesPrev','J',100,'¿Ha viajado antes a Estados Unidos o a otros países?','Have you traveled to the United States or other countries before?',{verifica:'viajes',busca:'Historial de cumplimiento.',tip:'Nunca haber viajado no es malo: responde "no" con naturalidad. Si has viajado, di dónde y cuándo.',
+      seg:[{re:/\bsi\b|fui|estuve|he viajado|viaje a|yes|i went|i have/,not:/nunca|no he|primera vez|never/,id:'s_ultimo',es:'¿Cuándo fue su última visita y por qué viajó?',en:'When was your last visit and why did you travel?'}]}),
+    q_otrosPaises:Q('q_otrosPaises','J',102,'¿Va a visitar otros países en este viaje?','Will you visit other countries on this trip?',{corta:true,espera:SEG_SINO,busca:'Itinerario completo.',tip:'Responde con la verdad y que coincida con tu plan.'}),
+    q_negada:Q('q_negada','J',104,'¿Le han negado una visa alguna vez?','Have you ever been refused a visa?',{verifica:'negada',corta:true,espera:SEG_SINO,busca:'Negativas no declaradas.',tip:'Contesta con la verdad. Ocultar una negativa es mucho peor que haberla tenido.'}),
+    q_arrestado:Q('q_arrestado','K',110,'¿Ha sido arrestado o tiene procesos pendientes?','Have you ever been arrested or do you have pending cases?',{corta:true,espera:SEG_SINO,busca:'Antecedentes.',tip:'Responde con la verdad y coherente con tu DS-160. Si hay un "sí", explícalo corto y sin minimizar.'}),
+    q_redes:Q('q_redes','L',120,'¿Qué redes sociales usa?','Which social media do you use?',{verifica:'redes',busca:'Coherencia entre lo publicado y lo declarado.',tip:'Nombra las mismas redes que declaraste en tu DS-160 (las usadas en los últimos 5 años). Omitir una puede tomarse como falsedad.'}),
+    // Preguntas trampa de coherencia: repiten un dato del perfil de otra forma
+    t_dias:Q('t_dias','M',900,'Disculpe, ¿cuántos días dijo que se quedaría?','Sorry, how many days did you say you would stay?',{verifica:'dias',trampa:true,refiere:'q_tiempo',base:'q_tiempo',busca:'Que repitas el mismo dato sin cambiarlo.',tip:'Repite el mismo número: es un dato que conoces porque es verdad.'}),
+    t_puesto:Q('t_puesto','M',901,'Confírmeme el nombre de su empresa y su puesto.','Please confirm the name of your employer and your position.',{verifica:'puesto',trampa:true,refiere:'q_trabajo',base:'q_trabajo',busca:'Mismo dato, dicho otra vez.',tip:'Los mismos datos de tu DS-160, sin cambios.'}),
+    t_paga:Q('t_paga','M',902,'Entonces, ¿quién dijo que paga el viaje?','So, who did you say is paying for the trip?',{verifica:'paga',trampa:true,refiere:'q_quienpaga',base:'q_quienpaga',busca:'Que quien paga no cambie.',tip:'Misma respuesta que antes: es la verdad y está en tu DS-160.'}),
+    t_ingreso:Q('t_ingreso','M',903,'¿En qué año empezó a trabajar en su empresa actual?','In what year did you start working at your current employer?',{verifica:'ingreso',trampa:true,refiere:'q_desdecuando',base:'q_desdecuando',busca:'Fechas de trabajo que cuadren.',tip:'Di el año real. Si tu DS-160 tiene un error de fechas, corrígelo antes de la cita y dilo.'}),
+    // Seguimiento genérico cuando la respuesta es vaga
+    s_vago:Q('s_vago','S',0,'Necesito una respuesta más concreta. ¿Puede decírmelo con sus palabras?','I need a more concrete answer. Can you tell me in your own words?',{seguimiento:true,tip:'Si no recuerdas un dato, es señal de que debes repasar tu DS-160 antes de la cita. Nunca inventes: di lo que sabes con claridad.'})
+  };
+
+  function marcas(perfil){
+    const m={}; const hoy=U.today();
+    m.sinHijos=+perfil.hijos===0; m.soltero=perfil.estadoCivil==='soltero'||perfil.estadoCivil==='union'&&false;
+    m.solteroSinHijos=perfil.estadoCivil==='soltero'&&+perfil.hijos===0;
+    m.sinViajes=!perfil.viajesPrev||/ning|nunca|^no\b|no he/.test(U.norm(perfil.viajesPrev));
+    m.otroPaga=perfil.quienPaga!=='yo';
+    m.familiaEUA=!!perfil.familiaEUA.trim();
+    m.estanciaLarga=+perfil.dias>15;
+    const costo=9000+(+perfil.dias||0)*2500; m.salarioBajo=+perfil.salario>0&&costo>3*+perfil.salario;
+    const fin=U.parseDate(perfil.trabAntFin), ing=U.parseDate(perfil.ingresoActual); m.empalme=!!(fin&&ing&&fin>ing);
+    m.visaNegada=perfil.visaNegada==='si';
+    return m;
+  }
+
+  function elegirPreguntas(perfil){
+    const m=marcas(perfil); const motivos=[]; const peso=[];
+    const core=['q_proposito','q_tiempo','q_trabajo','q_quienpaga','q_hospedaje'];
+    if(perfil.acompNombre) core.push('q_acompanante');
+    const extra=[];
+    function add(flag,txt,ids){ if(flag){ motivos.push(txt); ids.forEach(i=>extra.push(i)); peso.push(txt); } }
+    add(m.empalme,'Fechas de trabajo con empalme',['q_desdecuando','q_trabAnterior']);
+    add(m.familiaEUA,'Tienes familia en EUA',['q_famEUA','q_seQuedaCon']);
+    add(m.sinViajes,'Sin viajes previos',['q_viajesPrev','q_otrosPaises']);
+    add(m.solteroSinHijos,'Soltero(a) sin hijos: el oficial pregunta más por arraigo',['q_regresa','q_noquedarse','q_proyectos']);
+    add(m.otroPaga,'Otra persona paga el viaje',['q_costo','q_ahorros']);
+    add(m.estanciaLarga,'Estancia larga ('+perfil.dias+' días)',['q_regreso','q_boletos','q_porque_ahora']);
+    add(m.salarioBajo,'Salario bajo frente al costo de la estancia',['q_salario','q_costo','q_ahorros']);
+    add(m.visaNegada,'Visa negada antes',['q_negada']);
+    const fill=['q_salario','q_estudios','q_acompanante','q_regresa','q_viajesPrev','q_redes','q_planEstudiar','q_lugares','q_estadoCivil','q_funciones','q_permiso','q_arrestado'];
+    const prio=[]; core.concat(extra,fill).forEach(i=>{ if(prio.indexOf(i)<0) prio.push(i); });
+    const nBase=U.clamp(7+peso.length,7,12);
+    const base=prio.slice(0,nBase).sort((a,b)=>bancoPreguntas[a].orden-bancoPreguntas[b].orden);
+    // trampas
+    const cand=[]; if(m.empalme&&base.includes('q_desdecuando')) cand.push('t_ingreso');
+    ['t_dias','t_paga','t_puesto','t_ingreso'].forEach(t=>{ if(cand.indexOf(t)<0&&base.includes(bancoPreguntas[t].base)) cand.push(t); });
+    const nT=nBase>=10?2:1; const trampas=cand.slice(0,nT);
+    const lista=base.slice();
+    trampas.forEach((t,k)=>{ const bi=lista.indexOf(bancoPreguntas[t].base); const pos=k===0?Math.min(lista.length,bi+3):lista.length; lista.splice(pos,0,t); });
+    const cola=lista.map(id=>Object.assign({},bancoPreguntas[id]));
+    return {cola,motivos};
+  }
+
+  function siguientePregunta(estado,respuesta){
+    const actual=estado.cola[estado.pos]; const tn=U.norm(respuesta||'');
+    if(actual&&!actual.seguimiento&&estado.cola.length<15&&estado.nSeg<4){
+      let seg=null;
+      const vago=PATRONES.slice(-1)[0].re.test(tn)||tn.split(' ').filter(Boolean).length<=1&&!actual.corta;
+      if(vago&&estado.cola.filter(x=>x.id==='s_vago').length<1){ seg=Object.assign({},bancoPreguntas.s_vago,{verifica:actual.verifica,refiere:null}); }
+      else if(actual.seg){ for(const s of actual.seg){ if(s.re.test(tn)&&!(s.not&&s.not.test(tn))){ seg=Q(s.id,actual.tema,actual.orden,s.es,s.en,{seguimiento:true,verifica:s.verifica,tip:actual.tip,busca:'Seguimiento sobre lo que acabas de decir.'}); break; } } }
+      if(seg){ estado.cola.splice(estado.pos+1,0,seg); estado.nSeg++; }
+    }
+    estado.pos++;
+    return estado.cola[estado.pos]||null;
+  }
+
+  function evaluarRespuesta(q,texto,perfil,ctx){
+    ctx=ctx||{previas:{},segundos:0};
+    const tn=U.norm(texto); const palabras=tn?tn.split(' ').filter(Boolean).length:0;
+    const alertas=[]; const tips=[]; const notas=[];
+    // Alertas generales
+    detectarAlertas(tn).forEach(a=>alertas.push(a));
+    // Claridad
+    let claridad=100;
+    if(!palabras) claridad=0;
+    else{
+      if(palabras<=1&&!q.corta) claridad-=55; else if(palabras<3&&!q.corta) claridad-=30;
+      if(/\bno se\b|no lo se|ni idea|no recuerdo|i don.?t know/.test(tn)) claridad-=40;
+      if(q.espera&&!q.espera.test(tn)) claridad-=30;
+      if(palabras>80) claridad-=15;
+    }
+    claridad=U.clamp(claridad,0,100);
+    // Brevedad (ideal 1 a 3 frases)
+    const frases=String(texto||'').split(/[.!?;\n]+/).filter(s=>s.trim().length>1).length||(palabras?1:0);
+    let brevedad=!palabras?0:frases<=3?100:frases===4?80:frases===5?65:45;
+    if(palabras>70) brevedad-=25; else if(palabras>45) brevedad-=12;
+    if(palabras&&palabras<4&&!q.corta) brevedad=Math.min(brevedad,85);
+    brevedad=U.clamp(brevedad,0,100);
+    // Seguridad
+    const mul=(tn.match(MULETILLAS)||[]).length; const nosabe=/\bno se\b|no lo se|ni idea|no recuerdo|i don.?t know/.test(tn);
+    let seguridad=100-12*mul-(nosabe?35:0)-(ctx.segundos>45?10:0); if(!palabras) seguridad=0; seguridad=U.clamp(seguridad,0,100);
+    // Coherencia
+    let coherencia=null;
+    if(q.verifica&&CHK[q.verifica]&&palabras){
+      const r=CHK[q.verifica](tn,perfil,ctx,q);
+      if(r){ coherencia=r.score; r.alertas.forEach(t=>alertas.push({texto:t,grave:false,coherencia:true})); r.notas.forEach(n=>notas.push(n)); }
+    }
+    // Una respuesta corta y correcta es clara: si coincide con el perfil, no se penaliza la claridad
+    if(coherencia!=null&&coherencia>=90&&palabras&&!nosabe) claridad=Math.max(claridad,90);
+    if(!palabras){ alertas.push({texto:'No respondiste esta pregunta.',grave:false}); }
+    const unicas=[]; alertas.forEach(a=>{ if(!unicas.some(u=>u.texto===a.texto)) unicas.push(a); });
+    // Tips
+    if(q.tip) tips.push(q.tip);
+    if(coherencia!=null&&coherencia<60) tips.push(TIP_VERDAD+' Tu respuesta no coincidió con tu perfil.');
+    if(unicas.some(a=>a.grave)) tips.push('La B1/B2 es para turismo o negocios temporales. Si tu propósito real es turismo, dilo claro; si tu plan es trabajar, estudiar o vivir allá, esta no es la visa correcta y no debes decir lo contrario.');
+    if(brevedad<70) tips.push('Responde en 1 a 3 frases. Contesta solo lo que te preguntan; las respuestas largas se leen como duda.');
+    if(mul>0) tips.push('Evita muletillas ("este", "pues", "creo que"). Respira, haz una pausa de un segundo y responde.');
+    if(nosabe) tips.push('Si no recuerdas un dato tuyo, repasa tu DS-160 antes de la cita. Si no entendiste la pregunta, pide que la repitan.');
+    if(ctx.segundos>45) tips.push('Tardaste más de 45 segundos. En la entrevista real las respuestas son de pocos segundos.');
+    if(unicas.some(a=>/error|empalme|fechas/.test(a.texto))) tips.push(TIP_DS160_ERROR);
+    // Puntaje
+    const comp=[[claridad,.25],[brevedad,.2],[seguridad,.2]]; if(coherencia!=null) comp.push([coherencia,.35]);
+    const sw=comp.reduce((a,c)=>a+c[1],0); let puntaje=Math.round(comp.reduce((a,c)=>a+c[0]*c[1],0)/sw);
+    puntaje=U.clamp(puntaje-unicas.filter(a=>a.grave).length*12,0,100);
+    return {claridad,brevedad,coherencia,seguridad,puntaje,alertas:unicas,tips,notas,palabras,frases,segundos:ctx.segundos||0};
+  }
+
+  function evaluarSesion(respuestas,perfil){
+    const previas={}; const items=[];
+    respuestas.forEach(r=>{ const ev=evaluarRespuesta(r.q,r.texto,perfil,{previas:Object.assign({},previas),segundos:r.segundos}); items.push(Object.assign({},r,{ev})); previas[r.q.id]=r.texto; });
+    const n=items.length||1; let puntaje=Math.round(items.reduce((a,i)=>a+i.ev.puntaje,0)/n);
+    const todas=[]; items.forEach(i=>i.ev.alertas.forEach(a=>{ if(!todas.some(t=>t.texto===a.texto)) todas.push(a); }));
+    const graves=todas.filter(a=>a.grave).length, otras=todas.length-graves;
+    puntaje=U.clamp(puntaje-Math.min(10,otras*2),0,100);
+    let prob=U.clamp(Math.round(puntaje*0.95-graves*8-otras*2),0,95); if(graves) prob=Math.min(prob,40);
+    const nivel=prob>=70?'Buena práctica: sigue repasando':prob>=40?'Vas encaminado: pule los detalles':'Necesitas más práctica';
+    const dims={claridad:0,brevedad:0,seguridad:0}; items.forEach(i=>{ dims.claridad+=i.ev.claridad; dims.brevedad+=i.ev.brevedad; dims.seguridad+=i.ev.seguridad; });
+    Object.keys(dims).forEach(k=>dims[k]=Math.round(dims[k]/n));
+    const cs=items.filter(i=>i.ev.coherencia!=null); dims.coherencia=cs.length?Math.round(cs.reduce((a,i)=>a+i.ev.coherencia,0)/cs.length):null;
+    const seg=items.reduce((a,i)=>a+i.segundos,0);
+    return {items,puntaje,prob,nivel,alertas:todas,graves,dims,segundos:seg};
+  }
+
+  return {bancoPreguntas,elegirPreguntas,siguientePregunta,evaluarRespuesta,evaluarSesion,_parse:{parseDias,parseMonto,parseAnios,detectarAlertas},_marcas:marcas};
+})();
+
+/* ======================================================================
+   PERFIL, VALIDACIÓN, EJEMPLO
+   ====================================================================== */
+const CAMPOS=['nombre','edad','estadoCivil','hijos','estudios','empresa','puesto','ingresoActual','salario','trabAntEmpresa','trabAntInicio','trabAntFin','llegada','dias','ciudad','hospedaje','quienPaga','pagaDetalle','acompNombre','acompRelacion','viajesPrev','visaNegada','familiaEUA','redes','consulado','citaFecha','citaHora','casFecha','casHora'];
+const $=id=>document.getElementById(id);
+function leerPerfil(){ const p={}; CAMPOS.forEach(c=>{ const e=$(c); p[c]=e?e.value:''; }); ['edad','hijos','salario','dias'].forEach(c=>p[c]=p[c]===''?0:+p[c]); return p; }
+function escribirPerfil(p){ CAMPOS.forEach(c=>{ const e=$(c); if(e&&p[c]!=null) e.value=p[c]; }); }
+function ejemplo(){
+  const hoy=U.today(); const cita=U.nextWeekday(U.addDays(hoy,36)); const cas=U.nextWeekday(U.addDays(cita,-8));
+  const ingreso=U.addMonths(hoy,-40); const antIni=U.addMonths(ingreso,-36); const antFin=U.addMonths(ingreso,4); // empalme a propósito
+  return {nombre:'Mariana Solís Ibarra',edad:31,estadoCivil:'soltero',hijos:0,estudios:'Licenciatura en Administración (Querétaro)',
+    empresa:'Logística del Bajío S.A. de C.V.',puesto:'Analista de compras',ingresoActual:U.iso(ingreso),salario:18500,
+    trabAntEmpresa:'Comercializadora Norte',trabAntInicio:U.iso(antIni),trabAntFin:U.iso(antFin),
+    llegada:U.iso(U.addDays(cita,75)),dias:14,ciudad:'Orlando, Florida',hospedaje:'Hotel Palm Breeze, Orlando (reservación)',
+    quienPaga:'yo',pagaDetalle:'con mis ahorros',acompNombre:'Carlos Pineda',acompRelacion:'amigo',viajesPrev:'ninguno',visaNegada:'no',
+    familiaEUA:'Tía Rosa Solís, Houston, Texas (ciudadana)',redes:'Instagram, Facebook',consulado:'Guadalajara',
+    citaFecha:U.iso(cita),citaHora:'09:30',casFecha:U.iso(cas),casHora:'13:00'};
+}
+function validarPerfil(p){
+  const out=[]; const hoy=U.today(); const add=(nivel,texto,ds)=>out.push({nivel,texto,ds160:!!ds});
+  const falt=[]; [['empresa','empresa'],['puesto','puesto'],['dias','días de estancia'],['llegada','fecha de llegada']].forEach(([k,n])=>{ if(!p[k]) falt.push(n); });
+  if(falt.length) add('alta','Faltan datos para entrevistar: '+falt.join(', ')+'.');
+  const ing=U.parseDate(p.ingresoActual), ai=U.parseDate(p.trabAntInicio), af=U.parseDate(p.trabAntFin), ll=U.parseDate(p.llegada), cita=U.parseDate(p.citaFecha), cas=U.parseDate(p.casFecha);
+  if(af&&ing&&af>ing) add('alta','Empalme de fechas: tu trabajo anterior termina el '+U.fmt(af)+', después de que entraste al trabajo actual ('+U.fmt(ing)+'). El oficial puede notarlo como contradicción.',true);
+  if(ai&&af&&ai>af) add('alta','Tu trabajo anterior empieza ('+U.fmt(ai)+') después de terminar ('+U.fmt(af)+').',true);
+  if(af&&ing&&af<ing&&U.diffDays(af,ing)>365) add('info','Hay un hueco de '+Math.round(U.diffDays(af,ing)/30)+' meses entre tus dos trabajos. No es malo, pero prepárate para explicarlo con la verdad.');
+  if(ing&&ing>hoy) add('alta','La fecha de ingreso al trabajo actual está en el futuro ('+U.fmt(ing)+').',true);
+  if(af&&af>hoy) add('alta','El fin del trabajo anterior está en el futuro ('+U.fmt(af)+').',true);
+  if(ll&&ll<hoy) add('alta','La fecha de llegada ('+U.fmt(ll)+') ya pasó.',true);
+  if(ll&&cita&&ll<cita) add('media','Tu llegada a EUA ('+U.fmt(ll)+') es antes de tu cita ('+U.fmt(cita)+'): no puedes viajar antes de tener la visa.');
+  if(p.dias>90) add('alta','Estancia de '+p.dias+' días: para turismo es muy larga y suena a que no regresarás.');
+  else if(p.dias>30) add('media','Estancia de '+p.dias+' días: es larga; prepara una explicación clara y verdadera.');
+  if(cita&&cita<hoy) add('media','La fecha de tu cita ya pasó ('+U.fmt(cita)+').');
+  if(cas&&cita&&cas>cita) add('media','El CAS ('+U.fmt(cas)+') es después de la cita ('+U.fmt(cita)+'): normalmente va antes.');
+  if(p.edad&&(p.edad<18||p.edad>100)) add('media','La edad capturada ('+p.edad+') parece incorrecta.');
+  const costo=9000+(+p.dias||0)*2500; if(p.salario>0&&costo>3*p.salario) add('media','Tu salario mensual (MXN '+p.salario.toLocaleString('es-MX')+') es bajo frente al costo estimado de la estancia (unos MXN '+costo.toLocaleString('es-MX')+'). Prepárate para explicar con la verdad cómo lo pagas.');
+  if(!p.redes.trim()) add('info','No capturaste redes sociales. La DS-160 pide las usadas en los últimos 5 años; omitir una puede tomarse como falsedad.');
+  if(p.familiaEUA.trim()) add('info','Tienes familia en EUA: el oficial preguntará su estatus y si te quedarás con ellos. Responde con la verdad.');
+  return out;
+}
+function pintarValidaciones(){
+  const v=validarPerfil(leerPerfil()); const box=$('validaciones');
+  if(!v.length){ box.innerHTML='<div class="alert ok">No se detectaron contradicciones en tu perfil. Revisa de todas formas que coincida con tu DS-160.</div>'; return v; }
+  let h=''; const etq={alta:'Señal de alerta',media:'Atención',info:'Nota'};
+  v.forEach(a=>{ h+='<div class="alert '+a.nivel+'"><strong>'+etq[a.nivel]+':</strong> '+U.esc(a.texto)+(a.ds160?'<br><span class="tip"><strong>Tip:</strong> '+U.esc(TIP_DS160_ERROR)+'</span>':'')+'</div>'; });
+  box.innerHTML=h; return v;
+}
+let tGuardar=null;
+function guardarPerfil(){ const ok=U.store.set(K.perfil,leerPerfil()); const m=$('msgGuardado'); m.textContent=ok?'Guardado en este navegador.':'No se pudo guardar en este navegador (almacenamiento bloqueado).'; clearTimeout(tGuardar); tGuardar=setTimeout(()=>m.textContent='',2500); }
+
+/* ======================================================================
+   PESTAÑAS, TEMA
+   ====================================================================== */
+function irA(tab){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));
+  document.querySelectorAll('section.panel').forEach(s=>s.classList.toggle('on',s.id==='tab-'+tab));
+  if(tab==='historial') pintarHistorial(); if(tab==='plan') pintarPlan(); if(tab==='entrevista') prepararIntro();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>irA(b.dataset.tab)));
+function aplicarTema(t){
+  if(t){ document.documentElement.setAttribute('data-theme',t); }
+  const oscuro=document.documentElement.getAttribute('data-theme')==='dark'||(!document.documentElement.getAttribute('data-theme')&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+  $('btnTema').textContent=oscuro?'Modo claro':'Modo oscuro';
+}
+$('btnTema').addEventListener('click',()=>{ const oscuro=$('btnTema').textContent==='Modo claro'; const t=oscuro?'light':'dark'; aplicarTema(t); const pr=U.store.get(K.prefs,{}); pr.tema=t; U.store.set(K.prefs,pr); });
+
+/* ======================================================================
+   VOZ
+   ====================================================================== */
+const Voz={
+  soporta:'speechSynthesis' in window,
+  voz(lang){ const vs=speechSynthesis.getVoices(); const tag=lang==='en'?'en':'es'; return vs.find(v=>v.lang.replace('_','-').toLowerCase()===(lang==='en'?'en-us':'es-mx'))||vs.find(v=>v.lang.toLowerCase().startsWith(tag))||null; },
+  hablar(texto,lang){ if(!Voz.soporta) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(texto); u.lang=lang==='en'?'en-US':'es-MX'; const v=Voz.voz(lang); if(v) u.voice=v; u.rate=0.95; speechSynthesis.speak(u); }catch(e){} },
+  callar(){ try{ if(Voz.soporta) speechSynthesis.cancel(); }catch(e){} }
+};
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition; let rec=null, grabando=false;
+
+/* ======================================================================
+   ENTREVISTA
+   ====================================================================== */
+let E=null; // estado: {perfil, cola, pos, nSeg, respuestas, inicio, lang, voz}
+let timer=null, tInicio=0, ultimoResultado=null;
+function prepararIntro(){
+  if(E) return; $('entIntro').classList.remove('hidden'); $('entEnCurso').classList.add('hidden');
+  const m=[]; if(!Voz.soporta) m.push('Tu navegador no tiene voz del cónsul (speechSynthesis): verás las preguntas en texto.');
+  if(!SR) m.push('Tu navegador no soporta respuesta por voz (Web Speech API): contesta por texto. Chrome o Edge suelen soportarla.');
+  $('msgVoz').textContent=m.join(' ');
+  const p=leerPerfil(); const mt=MotorConsul._marcas(p); const lista=[]; if(p.empresa) { const el=MotorConsul.elegirPreguntas(p); el.motivos.forEach(x=>lista.push(x)); }
+  $('entMotivos').innerHTML=lista.length?'<strong>Se reforzarán estos temas según tu perfil:</strong><ul>'+lista.map(x=>'<li>'+U.esc(x)+'</li>').join('')+'</ul>':'';
+}
+function fmtT(s){ s=Math.floor(s); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function empezarTimer(){ clearInterval(timer); tInicio=Date.now(); $('entTimer').textContent='00:00'; timer=setInterval(()=>{ $('entTimer').textContent=fmtT((Date.now()-tInicio)/1000); },250); }
+function textoPregunta(q){ return q[E.lang]||q.es; }
+function mostrarPregunta(){
+  const q=E.cola[E.pos]; const total=E.cola.length;
+  $('entProgreso').textContent=(E.lang==='en'?'Question ':'Pregunta ')+(E.pos+1)+(E.lang==='en'?' of ':' de ')+total+(E.pos+1<=total&&E.nSeg<4&&total<15?'+':'');
+  $('entBarra').style.width=Math.round(E.pos/total*100)+'%';
+  $('entSegTag').innerHTML=q.seguimiento?'<span class="chip">Seguimiento</span>':q.trampa?'':'';
+  $('entPregunta').textContent=textoPregunta(q);
+  $('entRespuesta').value=''; $('entRespuesta').focus(); $('msgMic').classList.add('hidden');
+  empezarTimer(); if(E.voz) Voz.hablar(textoPregunta(q),E.lang);
+}
+function comenzar(){
+  const p=leerPerfil(); const v=validarPerfil(p); if(v.some(a=>a.nivel==='alta'&&/Faltan datos/.test(a.texto))){ irA('perfil'); pintarValidaciones(); return; }
+  const sel=MotorConsul.elegirPreguntas(p);
+  E={perfil:p,cola:sel.cola,pos:0,nSeg:0,respuestas:[],lang:$('selLang').value,voz:$('selVoz').value==='on'&&Voz.soporta};
+  $('entIntro').classList.add('hidden'); $('entEnCurso').classList.remove('hidden'); mostrarPregunta();
+}
+function enviar(){
+  if(!E) return; const txt=$('entRespuesta').value.trim(); if(grabando) pararMic();
+  const seg=(Date.now()-tInicio)/1000; clearInterval(timer); Voz.callar();
+  const q=E.cola[E.pos]; E.respuestas.push({q:q,texto:txt,segundos:Math.round(seg)});
+  const sig=MotorConsul.siguientePregunta(E,txt);
+  if(sig) mostrarPregunta(); else terminar();
+}
+function terminar(){
+  clearInterval(timer); Voz.callar(); const resp=E.respuestas; const perfil=E.perfil; E=null;
+  $('entEnCurso').classList.add('hidden'); $('entIntro').classList.remove('hidden');
+  if(!resp.length){ prepararIntro(); return; }
+  const r=MotorConsul.evaluarSesion(resp,perfil); ultimoResultado=r;
+  const h=U.store.get(K.hist,[]); h.push({f:new Date().toISOString(),p:r.puntaje,prob:r.prob,n:resp.length,alertas:r.alertas.map(a=>a.texto)}); U.store.set(K.hist,h);
+  pintarResultados(r); prepararIntro(); irA('resultados');
+}
+$('btnComenzar').addEventListener('click',comenzar);
+$('btnEnviar').addEventListener('click',enviar);
+$('entRespuesta').addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); enviar(); } });
+$('btnRepetir').addEventListener('click',()=>{ if(E){ if(Voz.soporta&&E.voz) Voz.hablar(textoPregunta(E.cola[E.pos]),E.lang); else { $('msgMic').textContent='La voz está desactivada o no disponible: lee la pregunta en pantalla.'; $('msgMic').classList.remove('hidden'); } } });
+$('btnAbandonar').addEventListener('click',()=>{ if(!E) return; if(E.respuestas.length>=3) terminar(); else { clearInterval(timer); Voz.callar(); E=null; prepararIntro(); $('entEnCurso').classList.add('hidden'); $('entIntro').classList.remove('hidden'); } });
+function pararMic(){ try{ if(rec) rec.stop(); }catch(e){} grabando=false; $('btnMic').textContent='Responder con voz'; }
+$('btnMic').addEventListener('click',()=>{
+  const m=$('msgMic');
+  if(!SR){ m.textContent='Tu navegador no soporta respuesta por voz. Usa Chrome o Edge, o escribe tu respuesta.'; m.classList.remove('hidden'); return; }
+  if(grabando){ pararMic(); return; }
+  try{
+    rec=new SR(); rec.lang=(E&&E.lang==='en')?'en-US':'es-MX'; rec.interimResults=true; rec.continuous=false;
+    const base=$('entRespuesta').value; rec.onresult=ev=>{ let t=''; for(let i=0;i<ev.results.length;i++) t+=ev.results[i][0].transcript; $('entRespuesta').value=(base?base+' ':'')+t; };
+    rec.onend=()=>{ grabando=false; $('btnMic').textContent='Responder con voz'; };
+    rec.onerror=ev=>{ grabando=false; $('btnMic').textContent='Responder con voz'; m.textContent='No se pudo usar el micrófono de la página. En el celular toca el micrófono de tu teclado para dictar la respuesta, o escríbela.'; m.classList.remove('hidden'); };
+    rec.start(); grabando=true; $('btnMic').textContent='Detener micrófono'; m.textContent='Escuchando... habla y luego revisa el texto antes de enviar.'; m.classList.remove('hidden');
+  }catch(e){ m.textContent='No se pudo iniciar el micrófono. Escribe tu respuesta.'; m.classList.remove('hidden'); }
+});
+if(Voz.soporta&&speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=()=>{};
+
+/* ======================================================================
+   RESULTADOS
+   ====================================================================== */
+function barra(v){ if(v==null) return '<small>No verificable</small>'; const c=v>=75?'':v>=50?'mid':'low'; return '<div class="bar '+c+'"><i style="width:'+v+'%"></i></div>'; }
+function metrica(n,v){ return '<div><small><span>'+n+'</span><strong>'+(v==null?'—':v)+'</strong></small>'+barra(v)+'</div>'; }
+function pintarResultados(r){
+  $('resVacio').classList.add('hidden'); const c=$('resContenido'); c.classList.remove('hidden');
+  let h='<div class="card"><h2>Resultado de tu práctica</h2><div class="grid"><div><div class="tip">Puntaje general</div><div class="big">'+r.puntaje+'<small style="font-size:1rem"> / 100</small></div></div><div><div class="tip">Probabilidad estimada de práctica</div><div class="big">'+r.prob+'%</div><div><strong>'+U.esc(r.nivel)+'</strong></div></div></div>';
+  h+='<div class="disclaimer" role="alert">Esto es solo práctica. Este porcentaje NO predice el resultado real de tu entrevista ni la aprobación de tu visa: la decisión es siempre del oficial consular. Úsalo solo para medir tu avance al practicar.</div>';
+  h+='<div class="metrics">'+metrica('Claridad',r.dims.claridad)+metrica('Brevedad',r.dims.brevedad)+metrica('Coherencia',r.dims.coherencia)+metrica('Seguridad',r.dims.seguridad)+'</div>';
+  h+='<p class="tip">'+r.items.length+' preguntas · tiempo total de respuesta '+fmtT(r.segundos)+'</p></div>';
+  h+='<div class="card"><h3>Señales de alerta detectadas ('+r.alertas.length+')</h3>';
+  h+=r.alertas.length?r.alertas.map(a=>'<div class="alert '+(a.grave?'alta':'media')+'">'+U.esc(a.texto)+'</div>').join(''):'<div class="alert ok">No se detectaron señales de alerta en tus respuestas.</div>';
+  h+='</div><h3>Detalle por pregunta</h3>';
+  r.items.forEach((it,i)=>{
+    const ev=it.ev; h+='<div class="card"><div class="row" style="justify-content:space-between"><strong>'+(i+1)+'. '+U.esc(it.q.es)+'</strong><span class="chip">'+ev.puntaje+' pts</span></div>';
+    if(it.q.seguimiento) h+='<span class="chip">Seguimiento</span>'; if(it.q.trampa) h+='<span class="chip">Pregunta de coherencia</span>';
+    h+='<div class="tip">Qué busca el oficial: '+U.esc(it.q.busca||'')+'</div>';
+    h+='<div class="ans">'+(it.texto?U.esc(it.texto):'(sin respuesta)')+'</div><div class="tip">Tiempo: '+fmtT(it.segundos)+' · '+ev.palabras+' palabras · '+ev.frases+' frases</div>';
+    h+='<div class="metrics">'+metrica('Claridad',ev.claridad)+metrica('Brevedad',ev.brevedad)+metrica('Coherencia',ev.coherencia)+metrica('Seguridad',ev.seguridad)+'</div>';
+    ev.alertas.forEach(a=>{ h+='<div class="alert '+(a.grave?'alta':'media')+'">'+U.esc(a.texto)+'</div>'; });
+    ev.notas.forEach(n=>{ h+='<div class="tip">'+U.esc(n)+'</div>'; });
+    h+='<ul>'+ev.tips.map(t=>'<li>'+U.esc(t)+'</li>').join('')+'</ul></div>';
+  });
+  h+='<div class="row"><button class="btn" id="btnOtra" type="button">Practicar otra vez</button><button class="btn sec" id="btnVerHist" type="button">Ver mi avance</button></div>';
+  c.innerHTML=h; $('btnOtra').onclick=()=>irA('entrevista'); $('btnVerHist').onclick=()=>irA('historial');
+}
+
+/* ======================================================================
+   HISTORIAL
+   ====================================================================== */
+function pintarHistorial(){
+  const h=U.store.get(K.hist,[]); const g=$('histGrafica'), l=$('histLista');
+  accionesHist(false);
+  if(!h.length){ g.innerHTML='<p>Aún no hay prácticas guardadas.</p>'; l.innerHTML=''; return; }
+  const W=600,H=200,pad=30; const n=h.length; const x=i=>n===1?W/2:pad+i*(W-2*pad)/(n-1); const y=v=>H-pad-(v/100)*(H-2*pad);
+  let svg='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Gráfica de puntajes por práctica">';
+  [0,50,100].forEach(v=>{ svg+='<line x1="'+pad+'" x2="'+(W-pad)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--brd)"/><text x="2" y="'+(y(v)+4)+'" font-size="11" fill="var(--txt2)">'+v+'</text>'; });
+  svg+='<polyline fill="none" stroke="var(--verde)" stroke-width="3" points="'+h.map((e,i)=>x(i)+','+y(e.p)).join(' ')+'"/>';
+  h.forEach((e,i)=>{ svg+='<circle cx="'+x(i)+'" cy="'+y(e.p)+'" r="5" fill="var(--ambar)" stroke="var(--tinta)"><title>'+e.p+' pts</title></circle>'; });
+  svg+='</svg>'; g.innerHTML=svg;
+  let t='<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Puntaje</th><th>Prob.</th><th>Alertas</th></tr></thead><tbody>';
+  h.slice().reverse().forEach(e=>{ const d=new Date(e.f); t+='<tr><td>'+U.fmtHora(d)+'</td><td>'+e.p+'</td><td>'+e.prob+'%</td><td>'+(e.alertas.length?e.alertas.length+': '+U.esc(e.alertas.slice(0,2).join(' · ')):'0')+'</td></tr>'; });
+  l.innerHTML=t+'</tbody></table></div>';
+}
+function accionesHist(confirmar){
+  const a=$('histAcciones');
+  if(!confirmar){
+    a.innerHTML='<button class="btn danger" id="btnBorrarHist" type="button">Borrar historial</button>';
+    $('btnBorrarHist').onclick=()=>accionesHist(true);
+    if(!U.store.get(K.hist,[]).length) $('btnBorrarHist').classList.add('hidden');
+  } else {
+    a.innerHTML='<span>¿Seguro que quieres borrar todo el historial? No se puede deshacer.</span> <button class="btn danger" id="hSi" type="button">Sí, borrar</button> <button class="btn sec" id="hNo" type="button">Cancelar</button>';
+    $('hSi').onclick=()=>{ U.store.del(K.hist); pintarHistorial(); };
+    $('hNo').onclick=()=>accionesHist(false);
+  }
+}
+
+/* ======================================================================
+   MI PLAN
+   ====================================================================== */
+const DOCS=[
+  ['pasaporte','Pasaporte vigente (y pasaportes anteriores si los tienes)'],
+  ['ds160','Confirmación de la DS-160 impresa, con código de barras (y la original si corregiste algo)'],
+  ['cita','Confirmación de la cita impresa'],
+  ['pago','Comprobante de pago de la cuota de la visa'],
+  ['laboral','Constancia laboral con fecha de ingreso (solo se muestra si el oficial la pide)'],
+  ['cuentas','Estados de cuenta recientes (solo si el oficial los pide)'],
+  ['itinerario','Itinerario y reservaciones, impresos (solo si los pide)'],
+  ['carpeta','Todo en una carpeta ordenada, sin entregar nada que no pidan']
+];
+const DIA=[
+  ['nomochila','No llevar mochilas ni maletas grandes (más de unos 45 x 45 cm); bolso pequeño'],
+  ['noalimentos','No llevar alimentos ni líquidos, lociones ni aerosoles (salvo bebé o necesidad médica)'],
+  ['nopunzo','No llevar punzocortantes: tijeras, limas, navajas, encendedores'],
+  ['celular','Celular apagado y declarado en seguridad (verifica la regla vigente en el sitio oficial); smartwatch, laptop, tableta y USB: verifica también si se permiten (las fuentes se contradicen)'],
+  ['sinacomp','Los acompañantes normalmente no entran (salvo menores o quien necesite asistencia): avísales'],
+  ['margen','Llegar con margen, pero llega a la hora que indique tu confirmación de cita (en algunas citas piden no llegar más de 15 minutos antes)'],
+  ['dormir','Dormir bien la noche anterior'],
+  ['ropa','Ropa sobria y cómoda'],
+  ['efectivo','Efectivo para estacionamiento o transporte, y plan B de traslado'],
+  ['repaso','Repasar tus datos: trabajo, fechas, viaje, hospedaje, quién paga (sin memorizar frases)']
+];
+function pintarChecks(el,lista,pref){
+  const ch=U.store.get(K.checks,{}); el.innerHTML=lista.map(([k,t])=>'<label class="check"><input type="checkbox" data-k="'+pref+k+'"'+(ch[pref+k]?' checked':'')+'><span style="font-weight:400;font-size:1rem">'+U.esc(t)+'</span></label>').join('');
+  el.querySelectorAll('input').forEach(i=>i.addEventListener('change',()=>{ const c=U.store.get(K.checks,{}); c[i.dataset.k]=i.checked; U.store.set(K.checks,c); }));
+}
+function tareasDelDia(d,i,cita,cas,tieneAlertas){
+  const t=[]; const resta=U.diffDays(d,cita);
+  if(resta===0){ t.push('Día de la cita: sigue el checklist de abajo, respira y responde con la verdad.'); return t; }
+  if(cas&&U.diffDays(d,cas)===0){ t.push('Día del CAS (huellas y foto): lleva pasaporte y las confirmaciones impresas. Revisa el checklist.'); t.push('Práctica corta por la noche.'); return t; }
+  if(cas&&U.diffDays(d,cas)===1) t.push('Día antes del CAS: confirma traslado y prepara documentos.');
+  if(resta===1){ t.push('Día antes de la cita: no estudies de más. Prepara documentos y ropa, confirma el traslado, haz 1 práctica ligera y duerme temprano.'); return t; }
+  if(i===0&&tieneAlertas) t.push('Revisa las alertas de tu perfil. Si tu DS-160 tiene un error, llena una DS-160 corregida y actualiza el número en tu cita.');
+  t.push('Práctica: 1 entrevista completa (10 a 15 minutos) y lee tus tips.');
+  if(resta<=7) t.push('Repaso final de tu DS-160, línea por línea.'); else if(i%3===0) t.push('Repasa tu DS-160: fechas, trabajo, quién paga, hospedaje.');
+  if(resta<=10||i%7===0) t.push('Revisa tus documentos y el checklist.');
+  if(resta===3) t.push('Define y reserva tu plan de traslado (dormir allá, auto o autobús).');
+  return t;
+}
+function pintarPlan(){
+  const p=leerPerfil(); const hoy=U.today(); const cita=U.parseDate(p.citaFecha), cas=U.parseDate(p.casFecha);
+  let c='';
+  if(!cita){ c='<div class="alert info">Captura la fecha de tu cita en la pestaña "Mi perfil" para ver tu cuenta regresiva y tu rutina.</div>'; }
+  else{
+    const d=U.diffDays(hoy,cita);
+    c='<div class="grid"><div><div class="tip">Cita en '+U.esc(p.consulado)+'</div><div class="big">'+(d>=0?d:0)+' <small style="font-size:1rem">días</small></div><div>'+U.fmt(cita)+(p.citaHora?' a las '+U.esc(p.citaHora)+' h':'')+'</div></div>';
+    if(cas){ const dc=U.diffDays(hoy,cas); c+='<div><div class="tip">CAS (huellas y foto)</div><div class="big">'+(dc>=0?dc:0)+' <small style="font-size:1rem">días</small></div><div>'+U.fmt(cas)+(p.casHora?' a las '+U.esc(p.casHora)+' h':'')+(dc<0?' (ya pasó)':'')+'</div></div>'; }
+    c+='</div>';
+    if(d<0) c+='<div class="alert media">La fecha de tu cita ya pasó. Actualízala en tu perfil.</div>';
+  }
+  $('planCuenta').innerHTML=c;
+  const tieneAl=validarPerfil(p).some(a=>a.ds160);
+  if(cita&&cita>=hoy){
+    const dias=[]; for(let d=new Date(hoy),i=0;d<=cita;d=U.addDays(d,1),i++) dias.push({d:new Date(d),i,t:tareasDelDia(d,i,cita,cas,tieneAl)});
+    $('planHoy').innerHTML='<div class="alert info"><strong>Hoy ('+U.fmt(hoy)+'):</strong><ul>'+dias[0].t.map(x=>'<li>'+U.esc(x)+'</li>').join('')+'</ul></div>';
+    const fila=x=>'<tr><td style="white-space:nowrap">'+U.fmt(x.d)+'</td><td>'+x.t.map(U.esc).join('<br>')+'</td></tr>';
+    $('planRutina').innerHTML='<p class="tip">Rutina calculada desde hoy ('+U.fmt(hoy)+') hasta tu cita ('+U.fmt(cita)+'): '+dias.length+' días.</p><div class="tablewrap"><table><tbody>'+dias.slice(0,14).map(fila).join('')+'</tbody></table></div>'+(dias.length>14?'<details><summary>Ver los '+(dias.length-14)+' días restantes</summary><div class="tablewrap"><table><tbody>'+dias.slice(14).map(fila).join('')+'</tbody></table></div></details>':'');
+  } else { $('planHoy').innerHTML=''; $('planRutina').innerHTML='<p>Cuando captures una fecha de cita futura, aquí aparecerá tu rutina diaria.</p>'; }
+  pintarChecks($('chkDocs'),DOCS,'doc_'); pintarChecks($('chkDia'),DIA,'dia_');
+}
+
+/* ======================================================================
+   ARRANQUE
+   ====================================================================== */
+$('btnEjemplo').addEventListener('click',()=>{ escribirPerfil(ejemplo()); guardarPerfil(); pintarValidaciones(); });
+$('btnLimpiar').addEventListener('click',()=>{ $('formPerfil').reset(); U.store.del(K.perfil); pintarValidaciones(); $('msgGuardado').textContent='Formulario limpio.'; });
+$('formPerfil').addEventListener('input',()=>{ guardarPerfil(); pintarValidaciones(); });
+$('formPerfil').addEventListener('submit',e=>e.preventDefault());
+$('btnIrEntrevista').addEventListener('click',()=>{ pintarValidaciones(); irA('entrevista'); });
+(function init(){
+  const pr=U.store.get(K.prefs,{}); aplicarTema(pr.tema||null);
+  const p=U.store.get(K.perfil,null); if(p) escribirPerfil(p);
+  pintarValidaciones();
+})();
+
+/* ======================================================================
+   APP INSTALABLE (PWA): funciona sin internet y se instala desde Chrome
+   ====================================================================== */
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+let avisoInstalar=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); avisoInstalar=e; $('btnInstalar').classList.remove('hidden'); });
+$('btnInstalar').addEventListener('click',async()=>{ if(!avisoInstalar) return; avisoInstalar.prompt(); try{ await avisoInstalar.userChoice; }catch(e){} avisoInstalar=null; $('btnInstalar').classList.add('hidden'); });
+window.addEventListener('appinstalled',()=>$('btnInstalar').classList.add('hidden'));
+</script>
+</body>
+</html>

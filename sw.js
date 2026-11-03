@@ -1,6 +1,6 @@
 // Service worker del simulador: guarda la app en el celular para que abra sin internet.
 // Al publicar una versión nueva, cambia VERSION para que los celulares la descarguen.
-const VERSION = 'simvisa-v1';
+const VERSION = 'simvisa-v2';
 const ARCHIVOS = ['./', 'index.html', 'manifest.webmanifest', 'icons/icono-192.png', 'icons/icono-512.png', 'icons/icono-180.png'];
 
 self.addEventListener('install', e => {
@@ -25,6 +25,7 @@ self.addEventListener('fetch', e => {
         }
         return r;
       })
-      .catch(() => caches.match(e.request).then(r => r || caches.match('index.html')))
+      // Sin señal: la copia guardada; solo al abrir la app (navegación) se cae a index.html
+      .catch(() => caches.match(e.request).then(r => r || (e.request.mode === 'navigate' ? caches.match('index.html') : Response.error())))
   );
 });

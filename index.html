@@ -111,7 +111,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.1 · 4-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.2 · 4-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
@@ -171,7 +171,9 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
     <div><label for="viajesPrev">Viajes anteriores <span class="h">Escribe "ninguno" si no has viajado</span></label><input id="viajesPrev" type="text"></div>
     <div><label for="visaNegada">¿Visas negadas antes?</label><select id="visaNegada"><option value="no">No</option><option value="si">Sí</option></select></div>
     <div><label for="familiaEUA">Familia en EUA <span class="h">Nombre, ciudad y estatus. Vacío si no tienes</span></label><input id="familiaEUA" type="text"></div>
-    <div><label for="redes">Redes sociales declaradas</label><input id="redes" type="text"></div>
+    <div><label for="redFacebook">Facebook (usuario o nombre del perfil) <span class="h">Vacío si no la declaraste en tu DS-160</span></label><input id="redFacebook" type="text"></div>
+    <div><label for="redInstagram">Instagram (usuario) <span class="h">Vacío si no la declaraste en tu DS-160</span></label><input id="redInstagram" type="text"></div>
+    <div><label for="redOtras">Otras redes (opcional) <span class="h">Ej. TikTok, X, LinkedIn. Vacío si no declaraste otras</span></label><input id="redOtras" type="text"></div>
   </div></fieldset>
   <fieldset><legend>Citas</legend><div class="grid">
     <div><label for="consulado">Consulado</label><select id="consulado"><option>Guadalajara</option><option>Ciudad de México</option><option>Monterrey</option><option>Tijuana</option><option>Ciudad Juárez</option><option>Hermosillo</option><option>Matamoros</option><option>Mérida</option><option>Nogales</option><option>Nuevo Laredo</option></select></div>
@@ -706,10 +708,20 @@ const MotorConsul = (function(){
 /* ======================================================================
    PERFIL, VALIDACIÓN, EJEMPLO
    ====================================================================== */
-const CAMPOS=['nombre','edad','estadoCivil','hijos','estudios','empresa','puesto','ingresoActual','salario','trabAntEmpresa','trabAntInicio','trabAntFin','llegada','dias','ciudad','hospedaje','quienPaga','pagaDetalle','acompNombre','acompRelacion','viajesPrev','visaNegada','familiaEUA','redes','consulado','citaFecha','citaHora','casFecha','casHora'];
+const CAMPOS=['nombre','edad','estadoCivil','hijos','estudios','empresa','puesto','ingresoActual','salario','trabAntEmpresa','trabAntInicio','trabAntFin','llegada','dias','ciudad','hospedaje','quienPaga','pagaDetalle','acompNombre','acompRelacion','viajesPrev','visaNegada','familiaEUA','redFacebook','redInstagram','redOtras','consulado','citaFecha','citaHora','casFecha','casHora'];
 const $=id=>document.getElementById(id);
-function leerPerfil(){ const p={}; CAMPOS.forEach(c=>{ const e=$(c); p[c]=e?e.value:''; }); ['edad','hijos','salario','dias'].forEach(c=>p[c]=p[c]===''?0:+p[c]); return p; }
-function escribirPerfil(p){ CAMPOS.forEach(c=>{ const e=$(c); if(e&&p[c]!=null) e.value=p[c]; }); }
+// Redes: tres campos en el formulario; p.redes se arma para la evaluación y la validación (vacío = no la declaró)
+const SIN_RED=/^(no|ninguna?|n\/?a|none|no aplica|-)$/i;
+function armarRedes(p){ const l=[]; if(p.redFacebook&&!SIN_RED.test(p.redFacebook.trim())) l.push('Facebook'); if(p.redInstagram&&!SIN_RED.test(p.redInstagram.trim())) l.push('Instagram');
+  const o=(p.redOtras||'').trim(); if(o&&!SIN_RED.test(o)) l.push(o); return l.join(', '); }
+// Perfiles guardados antes de v1.1 traen 'redes' como texto: se reparte en los tres campos
+function migrarRedes(p){ if(!p||typeof p.redes!=='string'||'redFacebook' in p||'redInstagram' in p||'redOtras' in p) return p;
+  const q={...p,redFacebook:'',redInstagram:'',redOtras:''}; const otras=[];
+  p.redes.split(/\s*(?:,|;|\/|\by\b|\band\b)\s*/i).map(s=>s.trim()).filter(Boolean).forEach(t=>{
+    if(/facebook|\bfb\b/i.test(t)) q.redFacebook='declarada'; else if(/instagram|\big\b/i.test(t)) q.redInstagram='declarada'; else if(!SIN_RED.test(t)) otras.push(t); });
+  q.redOtras=otras.join(', '); return q; }
+function leerPerfil(){ const p={}; CAMPOS.forEach(c=>{ const e=$(c); p[c]=e?e.value:''; }); ['edad','hijos','salario','dias'].forEach(c=>p[c]=p[c]===''?0:+p[c]); p.redes=armarRedes(p); return p; }
+function escribirPerfil(p){ p=migrarRedes(p); CAMPOS.forEach(c=>{ const e=$(c); if(e&&p[c]!=null) e.value=p[c]; }); }
 function ejemplo(){
   const hoy=U.today(); const cita=U.nextWeekday(U.addDays(hoy,36)); const cas=U.nextWeekday(U.addDays(cita,-8));
   const ingreso=U.addMonths(hoy,-40); const antIni=U.addMonths(ingreso,-36); const antFin=U.addMonths(ingreso,4); // empalme a propósito
@@ -718,7 +730,7 @@ function ejemplo(){
     trabAntEmpresa:'Comercializadora Norte',trabAntInicio:U.iso(antIni),trabAntFin:U.iso(antFin),
     llegada:U.iso(U.addDays(cita,75)),dias:14,ciudad:'Orlando, Florida',hospedaje:'Hotel Palm Breeze, Orlando (reservación)',
     quienPaga:'yo',pagaDetalle:'con mis ahorros',acompNombre:'Carlos Pineda',acompRelacion:'amigo',viajesPrev:'ninguno',visaNegada:'no',
-    familiaEUA:'Tía Rosa Solís, Houston, Texas (ciudadana)',redes:'Instagram, Facebook',consulado:'Guadalajara',
+    familiaEUA:'Tía Rosa Solís, Houston, Texas (ciudadana)',redFacebook:'Mariana Solís Ibarra',redInstagram:'@mariana.solis.ficticia',redOtras:'',consulado:'Guadalajara',
     citaFecha:U.iso(cita),citaHora:'09:30',casFecha:U.iso(cas),casHora:'13:00'};
 }
 function validarPerfil(p){
@@ -982,11 +994,13 @@ const DS = (function(){
     ['trabAntEmpresa','Trabajo anterior (empresa)','text'],['trabAntInicio','Trabajo anterior: inicio','date'],['trabAntFin','Trabajo anterior: fin','date'],
     ['llegada','Fecha de llegada a EUA','date'],['dias','Días de estancia','number'],['ciudad','Ciudad de destino','text'],['hospedaje','Hospedaje','text'],
     ['quienPaga','¿Quién paga el viaje?','sel'],['pagaDetalle','Detalle de quién paga','text'],['acompNombre','Acompañante (nombre)','text'],['acompRelacion','Relación con el acompañante','text'],
-    ['viajesPrev','Viajes anteriores a EUA','text'],['visaNegada','¿Visas negadas antes?','sel'],['familiaEUA','Familia en EUA','text'],['redes','Redes sociales declaradas','text']];
+    ['viajesPrev','Viajes anteriores a EUA','text'],['visaNegada','¿Visas negadas antes?','sel'],['familiaEUA','Familia en EUA','text'],['redFacebook','Facebook (usuario o perfil)','text'],['redInstagram','Instagram (usuario)','text'],['redOtras','Otras redes','text']];
   const norm=s=>s.replace(/\s+/g,' ').trim();
+  const MENORES=/^(en|de|del|la|las|los|el|y|e|o|u|a|para|con|of|and|the|in|for|at)$/i;
+  const titulo=s=>tcase(s).split(' ').map((w,i)=>i>0&&MENORES.test(w)?w.toLowerCase():w).join(' ');
   const tcase=s=>norm(s).toLowerCase().replace(/(^|[\s\-'.])([a-záéíóúñü])/g,(m,a,b)=>a+b.toUpperCase());
   function fecha(s){ if(!s) return ''; s=s.toUpperCase();
-    let m=/(\d{1,2})[\s\-\/.]([A-Z]{3,4})[\s\-\/.,]+(\d{4})/.exec(s); if(m&&MES[m[2]]) return iso(+m[3],MES[m[2]],+m[1]);
+    let m=/(\d{1,2})[\s\-\/.]+([A-Z]{3,10})[\s\-\/.,]+(\d{4})/.exec(s); if(m&&MES[m[2].slice(0,3)]) return iso(+m[3],MES[m[2].slice(0,3)],+m[1]);
     m=/(\d{4})-(\d{2})-(\d{2})/.exec(s); if(m) return iso(+m[1],+m[2],+m[3]);
     m=/(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s); if(m){ let d=+m[1],mo=+m[2]; if(mo>12){const t=d;d=mo;mo=t;} return iso(+m[3],mo,d); }
     return ''; }
@@ -1028,7 +1042,106 @@ const DS = (function(){
       return null; }
     return {idx,val,yn,fin}; }
 
+  // ---- Formato oficial CEAC "Print Application" (etiqueta en una línea, valor en las siguientes) ----
+  const RUIDO=/^(Your Personal Copy -- Do Not Bring to Interview|Consular Electronic Application Center - Print Application|Online Nonimmigrant Visa Application \(DS-160\)|Application - Sensitive But Unclassified ?\(SBU\)|Print Application|Back: Confirmation Page|\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}(\s*[AP]\.?M\.?)?|https?:\/\/\S+|\d{1,2}\/\d{1,2})$/i;
+  const SECCION=/^(Personal, Address, Phone, and Passport\/Travel Document Information|Travel Information|The List of Purposes of Trip to the U\.S\.|Travel Companions? Information|Previous U\.S\. Travel Information|U\.S\. Contact Information|Family Information|(Present |Previous |Additional )?Work\/Education\/Training Information|Security and Background Information|Location Information|Location where you will be submitting your application|Preparer of Application|Spouse Information|[A-Z][A-Za-z ,\/\.]{3,60} Information)$/;
+  const PREG=/^(Do|Does|Are|Is|Have|Has|Did|Were|Was|Will|Can|Provide)\b/;
+  const esCEAC=t=>/Name Provided\s*:|Consular Electronic Application Center|printapplication\.aspx/i.test(t);
+  const limpiaEtq=l=>l.replace(/[:?]\s*$/,'').replace(/\s*\(\d+\)\s*$/,'').replace(/[:?]\s*$/,'').replace(/\s+/g,' ').trim();
+  // Convierte las líneas en pares {e: etiqueta, v: valor}. Los encabezados de sección quedan como {s}.
+  function pares(lines){
+    const P=[]; let cur=null;
+    const nuevo=(e,v)=>{ cur={e:limpiaEtq(e),v:v||''}; P.push(cur); };
+    for(let i=0;i<lines.length;i++){ let l=lines[i]; if(RUIDO.test(l)) continue;
+      if(SECCION.test(l)&&!/[:?]$/.test(l)){ P.push({s:l}); cur=null; continue; }
+      // Pregunta partida en varias líneas: se juntan las líneas con minúsculas hasta la que termina en "?" o ":"
+      // (los encabezados y pies de página intercalados no cuentan; si la respuesta YES/NO quedó en el mismo renglón
+      //  de una línea intermedia, por las dos columnas del PDF, se guarda como respuesta)
+      let resp='';
+      if(PREG.test(l)&&/[a-z]/.test(l)&&!/[?:](\s+(YES|NO))?\s*$/.test(l)){ let q=l, j=i, k=0; const r0=/\s+(YES|NO)$/.exec(q); if(r0){ resp=r0[1]; q=q.slice(0,r0.index); }
+        while(j+1<lines.length&&k<6){ const s=lines[j+1]; if(RUIDO.test(s)){ j++; continue; } if(!/[a-z]/.test(s)||PREG.test(s)) break; let t=s; const r=/\s+(YES|NO)$/.exec(t); if(r&&!/[?:]\s+(YES|NO)$/.test(t)){ resp=resp||r[1]; t=t.slice(0,r.index); }
+          q+=' '+t; j++; k++; if(/[?:](\s+(YES|NO))?\s*$/.test(t)) break; }
+        if(/[?:](\s+(YES|NO))?\s*$/.test(q)){ l=q; i=j; } else resp=''; }
+      let m=/^(.*\?)\s+(YES|NO)$/.exec(l); if(m){ nuevo(m[1],m[2]); cur=null; continue; }
+      if(resp&&/\?\s*$/.test(l)){ nuevo(l,resp); cur=null; continue; }
+      if(/[?:]\s*$/.test(l)&&/[a-z]/.test(l)){ nuevo(l,''); continue; }
+      // "Etiqueta: valor" en el mismo renglón (por si el PDF pone las dos columnas juntas)
+      m=/^([A-Z][^:]{1,120}?[a-z][^:]*?):\s*(?:\(\d+\):\s*)?(\S.*)$/.exec(l); if(m&&/[a-z]/.test(m[1])&&!/^https?$/i.test(m[1])){ nuevo(m[1],m[2]); continue; }
+      if(cur) cur.v=cur.v?cur.v+' '+l:l; }
+    P.forEach(p=>{ if('v' in p) p.v=norm(p.v); }); return P; }
+
+  function parsearCEAC(lines){
+    const P=pares(lines); const R={}; const N={}; const n=P.length;
+    const put=(k,v)=>{ if(v!==undefined&&v!==null&&v!=='') R[k]=v; };
+    const busca=(re,desde=0,hasta=n)=>{ for(let i=Math.max(0,desde);i<Math.min(hasta,n);i++) if(P[i].e&&re.test(P[i].e)) return i; return -1; };
+    const v=(re,desde,hasta)=>{ const i=busca(re,desde,hasta); if(i<0) return null; const x=P[i].v; return NA.test(x)?'':x; };
+    const yn=(re,desde,hasta)=>{ const i=busca(re,desde,hasta); if(i<0) return null; const m=/^(YES|NO)\b/i.exec(P[i].v); return m?/^Y/i.test(m[1]):null; };
+    // Respaldo sobre las líneas crudas: frase clave y el primer YES/NO antes de la siguiente pregunta
+    const ynCrudo=re=>{ const i=lines.findIndex(l=>re.test(l)); if(i<0) return null;
+      for(let j=i;j<Math.min(lines.length,i+14);j++){ const s=lines[j]; if(RUIDO.test(s)) continue; if(j>i&&PREG.test(s)) break;
+        const m=/(?:^|\s)(YES|NO)$/.exec(s); if(m&&(j>i||/\s(YES|NO)$/.test(s))) return m[1]==='YES'; }
+      return null; };
+    const nombreInv=s=>{ if(!s) return ''; const k=s.indexOf(','); return k>0?tcase(s.slice(k+1)+' '+s.slice(0,k)):tcase(s); };
+    const fin=(re,desde)=>{ const i=busca(re,desde); return i<0?n:i; };
+    // Datos personales
+    put('nombre',nombreInv(v(/^Name Provided$/i)));
+    const fn=v(/^Date of Birth$/i); if(fn){ const e=edadDe(fecha(fn)); if(e>0) put('edad',e); }
+    const ec=(v(/^Marital Status$/i)||'').toUpperCase(); if(ec) put('estadoCivil',/MARRIED|CASAD/.test(ec)?'casado':/COMMON|UNION|PARTNER|CIVIL/.test(ec)?'union':/DIVORC|SEPARAT/.test(ec)?'divorciado':/WIDOW|VIUD/.test(ec)?'viudo':/SINGLE|SOLTER/.test(ec)?'soltero':'');
+    // Redes (cada plataforma con su identificador; si no lo trae, "declarada")
+    const red={}; let hay=false;
+    P.forEach((p,i)=>{ if(!p.e||!/^Social Media (Provider\/)?Platform/i.test(p.e)) return; hay=true; const pl=p.v; if(!pl||NA.test(pl)) return;
+      let id=''; if(P[i+1]&&P[i+1].e&&/^Social Media Identifier/i.test(P[i+1].e)) id=NA.test(P[i+1].v)?'':P[i+1].v; const k=tcase(pl); if(!(k in red)||(!red[k]&&id)) red[k]=id; });
+    if(hay){ const otras=[]; Object.keys(red).forEach(r=>{ const id=red[r]||'declarada'; if(/facebook/i.test(r)) R.redFacebook=id; else if(/instagram/i.test(r)) R.redInstagram=id; else otras.push(red[r]?r+' ('+red[r]+')':r); });
+      if(!('redFacebook' in R)) R.redFacebook=''; if(!('redInstagram' in R)) R.redInstagram=''; R.redOtras=otras.join(', '); }
+    else if(yn(/^Do you have a social media presence/i)===false){ R.redFacebook=''; R.redInstagram=''; R.redOtras=''; }
+    // Viaje (todo antes de la sección de acompañantes y viajes previos)
+    const tv=busca(/^Intended Date of Arrival$/i); const finTv=fin(/^(Are there other persons traveling with you|Have you ever been in the U\.?S\.?)/i,Math.max(0,tv));
+    if(tv>=0){ put('llegada',fecha(P[tv].v));
+      const ls=v(/^Intended Length of Stay( in (the )?U\.?S\.?)?$/i,tv,finTv); const d=dias(ls||''); if(d) put('dias',d);
+      const ad=v(/^Address where you will stay( in the U\.?S\.?)?$/i,tv,finTv); if(ad){ const org=v(/^Organization Name in the U\.?S\.?$/i); const esHotel=org&&/\b(HOTEL|INN|RESORT|SUITES?|HOSTEL|MOTEL|LODGE|AIRBNB)\b/i.test(org);
+        put('hospedaje',esHotel&&/^\d/.test(ad)?tcase(org)+' – '+tcase(ad):tcase(ad)); }
+      const cs=v(/^City, State(, Postal\/Zip Code)?$/i,tv,finTv); if(cs){ const ps=cs.split(',').map(norm); const est=ps[1]?ps[1].replace(/\s*\d[\d\-]*\s*$/,'').trim():''; put('ciudad',tcase(ps[0])+(est?', '+tcase(est):'')); }
+      const pg=(v(/^Person\/Entity Paying for Your Trip$/i,tv,finTv)||'').toUpperCase();
+      if(pg){ put('quienPaga',/SELF/.test(pg)?'yo':/SPOUSE/.test(pg)?'pareja':/EMPLOYER|COMPANY|ORGANIZ/.test(pg)?'empresa':/RELATIVE/.test(pg)?'familiar':/OTHER|PERSON/.test(pg)?'otro':''); if(/SELF/.test(pg)) put('pagaDetalle','con recursos propios'); } }
+    // Acompañante: solo dentro de "Persons Traveling with You" (no confundir con U.S. Contact)
+    const otrosAc=yn(/^Are there other persons traveling with you/i);
+    const pt=busca(/^Persons Traveling with You$/i);
+    if(otrosAc!==false&&pt>=0){ const w=fin(/^(Have you ever been|Are you traveling as part of a group|U\.S\. Contact)/i,pt+1);
+      const nm=v(/^(Name|Surnames and Given Names)$/i,pt,w); const rl=v(/^Relationship( to You| with Person)?$/i,pt,w);
+      if(nm) put('acompNombre',nombreInv(nm)); if(rl) put('acompRelacion',rel(rl)); }
+    // Viajes previos y visa negada
+    const ev=yn(/^Have you ever been in the U\.?S\.?$/i);
+    if(ev===false) put('viajesPrev','ninguno'); else if(ev===true){ const i=busca(/^Have you ever been in the U\.?S\.?$/i); const w=fin(/^Have you ever been (issued|refused)/i,i+1);
+      const da=v(/^Date Arrived$/i,i,w), ls=v(/^Length of Stay$/i,i,w); put('viajesPrev','Sí'+(da?', última vez '+(fecha(da)||da):'')+(ls?' ('+ls.toLowerCase()+')':'')); }
+    let vn=yn(/^Have you ever been refused a U\.?S\.? Visa/i); if(vn===null) vn=ynCrudo(/refused a U\.?S\.? Visa/i); if(vn!==null) put('visaNegada',vn?'si':'no');
+    // Familia en EUA (sin datos de los padres)
+    const fi=yn(/^Do you have any immediate relatives/i), fo=yn(/^Do you have any other relatives/i);
+    if(fi===true){ const i=busca(/^Do you have any immediate relatives/i); const w=fin(/^Do you have any other relatives/i,i+1);
+      const a=v(/^(Relative'?s? )?Surnames?$/i,i,w), b=v(/^(Relative'?s? )?Given Names?$/i,i,w), r=v(/^Relationship to You$/i,i,w), s=v(/^(Relative'?s? )?(U\.?S\.? )?Status$/i,i,w);
+      const nm=tcase(((b||'')+' '+(a||'')).trim()); R.familiaEUA=nm?nm+(r?' ('+rel(r)+')':'')+(s?', estatus '+estat(s):''):'Sí (revisa el detalle en tu DS-160)'; }
+    else if(fi===false&&fo===true) R.familiaEUA='Otros familiares en EUA (revisa el detalle en tu DS-160)';
+    else if(fi===false&&fo!==true) R.familiaEUA='';
+    // Trabajo actual (hasta "Were you previously employed?")
+    const pe=busca(/^Present Employer or School Name$/i); const finPe=fin(/^(Were you previously employed|Employer Name|Previous Employer Name|Have you attended)/i,pe+1);
+    if(pe>=0){ if(P[pe].v&&!NA.test(P[pe].v)) put('empresa',P[pe].v);
+      const sd=v(/^(Start Date|Date Started)$/i,pe,finPe); if(sd&&fecha(sd)) put('ingresoActual',fecha(sd)); else N.ingresoActual='La DS-160 impresa no trae tu fecha de ingreso: captúrala a mano.';
+      const sal=v(/^Monthly (Salary|Monetary Income)( in Local Currency)?( \(if employed\))?$/i,pe,finPe); if(sal){ const x=/([\d][\d,\.]*)/.exec(sal); if(x){ const num=+x[1].replace(/,/g,''); if(num>0) put('salario',Math.round(num)); } }
+      const jt=v(/^Job Title$/i,pe,finPe); const du=v(/^Briefly Describe your Duties$/i,pe,finPe);
+      if(jt) put('puesto',jt); else if(du){ let s=du.split(/[,;.]/)[0].trim(); if(s.length>70) s=s.slice(0,70).replace(/\s+\S*$/,''); put('puesto',s); N.puesto='Sugerido a partir de tus funciones en la DS-160 (no trae puesto): revísalo.'; } }
+    // Trabajo anterior
+    const pv=yn(/^Were you previously employed/i);
+    if(pv!==false){ const i=busca(/^(Employer Name|Previous Employer Name)$/i); if(i>=0){ const w=fin(/^(Employer Name|Previous Employer Name|Name of (the )?Institution)$|^Have you attended/i,i+1);
+      if(P[i].v&&!NA.test(P[i].v)) put('trabAntEmpresa',P[i].v);
+      const d1=v(/^Employment Date From$/i,i,w), d2=v(/^Employment Date To$/i,i,w); if(d1) put('trabAntInicio',fecha(d1)); if(d2) put('trabAntFin',fecha(d2)); } }
+    // Estudios (primera institución)
+    const ni=busca(/^Name of (the )?(Institution|School)$/i);
+    if(ni>=0&&P[ni].v&&!NA.test(P[ni].v)){ const w=fin(/^(Name of (the )?(Institution|School)|Do you belong to a clan|Provide a List of Languages)/i,ni+1); const cs=v(/^Course of Study$/i,ni,w);
+      put('estudios',(cs?titulo(cs)+' – ':'')+titulo(P[ni].v)); }
+    if(Object.keys(N).length) R._notas=N;
+    return R; }
+
   function parsear(texto){
+    if(esCEAC(texto)) return parsearCEAC(texto.split(/\n/).map(norm).filter(Boolean));
     const lines=texto.split(/\n/).map(norm).filter(Boolean); const f=crear(lines); const R={}; const n=lines.length;
     const put=(k,v)=>{ if(v!==undefined&&v!==null&&v!=='') R[k]=v; };
     const nom=(a,b)=>tcase(((b&&b.v)||'')+' '+((a&&a.v)||''));
@@ -1086,10 +1199,20 @@ const DS = (function(){
     // Estudios
     const sc=f.val('Name of the School|Name of School|Name of (?:the )?Institution|Nombre de la escuela');
     if(sc&&sc.v){ let w=sc.i+8; for(let j=sc.i+1;j<Math.min(n,sc.i+8);j++){ if(/^(SOCIAL MEDIA|NAME OF (THE )?SCHOOL|NAME OF INSTITUTION|ADDITIONAL|SECURITY)/i.test(lines[j])){ w=j; break; } }
-      const cs=f.val('Course of Study|Carrera|Curso',sc.i,w); put('estudios',(cs&&cs.v?tcase(cs.v)+' – ':'')+tcase(sc.v)); }
+      const cs=f.val('Course of Study|Carrera|Curso',sc.i,w); put('estudios',(cs&&cs.v?titulo(cs.v)+' – ':'')+titulo(sc.v)); }
     // Redes sociales (puede haber varias; N/A, NONE, DOES NOT APPLY = ninguna)
-    const rs=[]; let hayRedes=false; lines.forEach((l,i)=>{ const m=/^\s*Social Media Provider\/Platform\s*[:\-]?\s*(.*)$/i.exec(l); if(!m) return; hayRedes=true; let v=norm(m[1]); if(!v&&lines[i+1]&&!/^[^:]{2,90}:/.test(lines[i+1])) v=norm(lines[i+1]); if(v&&!NA.test(v)&&!/:\s*$/.test(v)) rs.push(tcase(v)); });
-    if(hayRedes) R.redes=[...new Set(rs)].join(', ');
+    // Cada red con su identificador (Social Media Identifier) si viene; si no, "declarada"
+    const reRed=/^\s*Social Media Provider\/Platform\s*[:\-]?\s*(.*)$/i, reId=/^\s*Social Media Identifier\s*[:\-]?\s*(.*)$/i;
+    const redes={}; let hayRedes=false;
+    lines.forEach((l,i)=>{ const m=reRed.exec(l); if(!m) return; hayRedes=true; let v=norm(m[1]), k=i;
+      if(!v&&lines[i+1]&&!/^[^:]{2,90}:/.test(lines[i+1])){ v=norm(lines[i+1]); k=i+1; }
+      if(!v||NA.test(v)||/:\s*$/.test(v)) return;
+      let id=''; for(let j=k+1;j<Math.min(n,k+4);j++){ if(reRed.test(lines[j])) break; const mi=reId.exec(lines[j]); if(mi){ id=norm(mi[1]); if(!id&&lines[j+1]&&!/^[^:]{2,90}:/.test(lines[j+1])) id=norm(lines[j+1]); break; } }
+      if(NA.test(id)) id=''; const nombre=tcase(v); if(!(nombre in redes)||(!redes[nombre]&&id)) redes[nombre]=id; });
+    if(hayRedes){ const otras=[];
+      Object.keys(redes).forEach(r=>{ const id=redes[r]||'declarada';
+        if(/facebook/i.test(r)) R.redFacebook=id; else if(/instagram/i.test(r)) R.redInstagram=id; else otras.push(redes[r]?r+' ('+redes[r]+')':r); });
+      if(!('redFacebook' in R)) R.redFacebook=''; if(!('redInstagram' in R)) R.redInstagram=''; R.redOtras=otras.join(', '); }
     // Familiares en EUA
     const reRel=/relatives?(?:, not including parents,?)? in the (?:U\.?S\.?|United States)/i;
     const rl=f.idx(reRel);
@@ -1112,14 +1235,14 @@ const DS = (function(){
 })();
 
 function mostrarConfirmacionDS160(R){
-  const act=leerPerfil(); const box=$('confDS160'); const total=DS.DEFS.length; const hall=DS.DEFS.filter(d=>d[0] in R).length;
+  const act=leerPerfil(); const box=$('confDS160'); const notas=R._notas||{}; const total=DS.DEFS.length; const hall=DS.DEFS.filter(d=>d[0] in R).length;
   const opts={estadoCivil:[['soltero','Soltero(a)'],['casado','Casado(a)'],['union','Unión libre'],['divorciado','Divorciado(a)'],['viudo','Viudo(a)']],quienPaga:[['yo','Yo'],['familiar','Un familiar'],['empresa','Mi empresa'],['pareja','Mi pareja'],['otro','Otra persona']],visaNegada:[['no','No'],['si','Sí']]};
   const mostrarAct=(k)=>{ const v=act[k]; if(v===''||v===0||v==null) return '—'; const o=opts[k]&&opts[k].find(x=>x[0]===v); return o?o[1]:String(v); };
   let h='<div class="alert info"><strong>Confirma lo que encontré.</strong> Encontré '+hall+' de '+total+' campos. Marca los que quieras pasar a tu perfil y corrige lo que haga falta. Si no marcas un campo, tu dato actual no cambia.</div><div class="dsrows" role="table" aria-label="Datos encontrados en tu DS-160"><div class="dsrow dshead" role="row"><div role="columnheader">Campo</div><div role="columnheader">Dato encontrado en tu DS-160</div><div role="columnheader">Dato actual</div></div>';
   DS.DEFS.forEach(([k,lab,tipo])=>{ const ok=k in R; const v=ok?R[k]:'';
     let inp; if(tipo==='sel') inp='<select id="ds_'+k+'" '+(ok?'':'disabled')+'>'+opts[k].map(o=>'<option value="'+o[0]+'"'+(o[0]===v?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
     else inp='<input id="ds_'+k+'" type="'+tipo+'" value="'+U.esc(String(v))+'" '+(ok?'':'disabled placeholder="No se encontró, captúralo a mano"')+'>';
-    h+='<div class="dsrow" role="row"><div role="cell" class="dscampo"><label class="dscheck"><input type="checkbox" id="dsc_'+k+'" '+(ok?'checked':'disabled')+' data-k="'+k+'"><span>'+U.esc(lab)+'</span></label></div><div role="cell">'+inp+(ok&&v===''?'<span class="tip">La solicitud dice que no hay.</span>':'')+(ok?'':'<span class="tip">No se encontró, captúralo a mano.</span>')+'</div><div role="cell" class="dsact"><small>Dato actual</small> '+U.esc(mostrarAct(k))+'</div></div>'; });
+    h+='<div class="dsrow" role="row"><div role="cell" class="dscampo"><label class="dscheck"><input type="checkbox" id="dsc_'+k+'" '+(ok?'checked':'disabled')+' data-k="'+k+'"><span>'+U.esc(lab)+'</span></label></div><div role="cell">'+inp+(ok&&v===''?'<span class="tip">La solicitud dice que no hay.</span>':'')+(notas[k]?'<span class="tip"><strong>Revisa:</strong> '+U.esc(notas[k])+'</span>':(ok?'':'<span class="tip">No se encontró, captúralo a mano.</span>'))+'</div><div role="cell" class="dsact"><small>Dato actual</small> '+U.esc(mostrarAct(k))+'</div></div>'; });
   h+='</div><div class="row" style="margin-top:12px"><button class="btn" id="btnConfDS" type="button">Confirmar y pasar al perfil</button><button class="btn sec" id="btnCancDS" type="button">Cancelar</button></div>';
   box.innerHTML=h; box.classList.remove('hidden');
   DS.DEFS.forEach(([k])=>{ const c=$('dsc_'+k); if(c) c.addEventListener('change',()=>{ $('ds_'+k).disabled=!c.checked; }); });

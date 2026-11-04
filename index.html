@@ -111,7 +111,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.2 · 4-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.3 · 4-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
@@ -1240,16 +1240,17 @@ function mostrarConfirmacionDS160(R){
   const mostrarAct=(k)=>{ const v=act[k]; if(v===''||v===0||v==null) return '—'; const o=opts[k]&&opts[k].find(x=>x[0]===v); return o?o[1]:String(v); };
   let h='<div class="alert info"><strong>Confirma lo que encontré.</strong> Encontré '+hall+' de '+total+' campos. Marca los que quieras pasar a tu perfil y corrige lo que haga falta. Si no marcas un campo, tu dato actual no cambia.</div><div class="dsrows" role="table" aria-label="Datos encontrados en tu DS-160"><div class="dsrow dshead" role="row"><div role="columnheader">Campo</div><div role="columnheader">Dato encontrado en tu DS-160</div><div role="columnheader">Dato actual</div></div>';
   DS.DEFS.forEach(([k,lab,tipo])=>{ const ok=k in R; const v=ok?R[k]:'';
-    let inp; if(tipo==='sel') inp='<select id="ds_'+k+'" '+(ok?'':'disabled')+'>'+opts[k].map(o=>'<option value="'+o[0]+'"'+(o[0]===v?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
-    else inp='<input id="ds_'+k+'" type="'+tipo+'" value="'+U.esc(String(v))+'" '+(ok?'':'disabled placeholder="No se encontró, captúralo a mano"')+'>';
-    h+='<div class="dsrow" role="row"><div role="cell" class="dscampo"><label class="dscheck"><input type="checkbox" id="dsc_'+k+'" '+(ok?'checked':'disabled')+' data-k="'+k+'"><span>'+U.esc(lab)+'</span></label></div><div role="cell">'+inp+(ok&&v===''?'<span class="tip">La solicitud dice que no hay.</span>':'')+(notas[k]?'<span class="tip"><strong>Revisa:</strong> '+U.esc(notas[k])+'</span>':(ok?'':'<span class="tip">No se encontró, captúralo a mano.</span>'))+'</div><div role="cell" class="dsact"><small>Dato actual</small> '+U.esc(mostrarAct(k))+'</div></div>'; });
+    let inp; if(tipo==='sel') inp='<select id="ds_'+k+'">'+opts[k].map(o=>'<option value="'+o[0]+'"'+(o[0]===v?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+    else inp='<input id="ds_'+k+'" type="'+tipo+'" value="'+U.esc(String(v))+'" '+(ok?'':'placeholder="Captúralo aquí"')+'>';
+    h+='<div class="dsrow" role="row"><div role="cell" class="dscampo"><label class="dscheck"><input type="checkbox" id="dsc_'+k+'" '+(ok?'checked':'')+' data-k="'+k+'"><span>'+U.esc(lab)+'</span></label></div><div role="cell">'+inp+(ok&&v===''?'<span class="tip">La solicitud dice que no hay.</span>':'')+(notas[k]?'<span class="tip"><strong>Revisa:</strong> '+U.esc(notas[k])+'</span>':(ok?'':'<span class="tip">No se encontró: escríbelo aquí y se marcará solo.</span>'))+'</div><div role="cell" class="dsact"><small>Dato actual</small> '+U.esc(mostrarAct(k))+'</div></div>'; });
   h+='</div><div class="row" style="margin-top:12px"><button class="btn" id="btnConfDS" type="button">Confirmar y pasar al perfil</button><button class="btn sec" id="btnCancDS" type="button">Cancelar</button></div>';
   box.innerHTML=h; box.classList.remove('hidden');
-  DS.DEFS.forEach(([k])=>{ const c=$('dsc_'+k); if(c) c.addEventListener('change',()=>{ $('ds_'+k).disabled=!c.checked; }); });
+  // Todos los campos se pueden corregir o llenar antes de confirmar; al escribir en uno, se marca solo (pedido de Jonathan, 4-nov-2026)
+  DS.DEFS.forEach(([k])=>{ const c=$('dsc_'+k), f=$('ds_'+k); if(c&&f){ const marca=()=>{ if(c.dataset.manual==='off') return; c.checked=f.value!==''||R[k]===''; }; c.addEventListener('change',()=>{ c.dataset.manual=c.checked?'on':'off'; }); f.addEventListener('input',marca); f.addEventListener('change',marca); } });
   $('btnCancDS').addEventListener('click',()=>{ box.classList.add('hidden'); box.innerHTML=''; $('msgDS160').textContent='Carga cancelada. No se cambió tu perfil.'; $('fileDS160').value=''; });
   $('btnConfDS').addEventListener('click',()=>{
     const nuevo={}; let n=0;
-    DS.DEFS.forEach(([k,,tipo])=>{ const c=$('dsc_'+k); if(!c||!c.checked) return; let v=$('ds_'+k).value; if(tipo==='number') v=v===''?0:+v; nuevo[k]=v; n++; });
+    DS.DEFS.forEach(([k,,tipo])=>{ const c=$('dsc_'+k); if(!c||!c.checked) return; let v=$('ds_'+k).value; if(v===''&&R[k]!=='') return; if(tipo==='number') v=v===''?0:+v; nuevo[k]=v; n++; });
     escribirPerfil(nuevo); guardarPerfil(); pintarValidaciones();
     box.classList.add('hidden'); box.innerHTML=''; $('fileDS160').value='';
     $('msgDS160').textContent='Se cargaron '+n+' de '+total+' campos. Revísalos: el simulador compara tus respuestas contra estos datos.';

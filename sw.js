@@ -1,7 +1,7 @@
 // Service worker del simulador: guarda la app en el celular para que abra sin internet.
 // Al publicar una versión nueva, cambia VERSION para que los celulares la descarguen.
-const VERSION = 'simvisa-v2';
-const ARCHIVOS = ['./', 'index.html', 'manifest.webmanifest', 'icons/icono-192.png', 'icons/icono-512.png', 'icons/icono-180.png'];
+const VERSION = 'simvisa-v3';
+const ARCHIVOS = ['./', 'index.html', 'manifest.webmanifest', 'icons/icono-192.png', 'icons/icono-512.png', 'icons/icono-180.png', 'vendor/pdfjs/pdf.min.mjs', 'vendor/pdfjs/pdf.worker.min.mjs'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(ARCHIVOS)).then(() => self.skipWaiting()));

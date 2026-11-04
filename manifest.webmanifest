@@ -1,7 +1,7 @@
 {
-  "name": "Simulador de entrevista de visa B1/B2",
-  "short_name": "Simulador visa",
-  "description": "Practica tu entrevista de visa B1/B2 en español con tu perfil DS-160, calificación y plan hasta tu cita. Por AutoRise Solutions.",
+  "name": "Consul Simulator · Entrevista de visa B1/B2",
+  "short_name": "Consul Simulator",
+  "description": "Practica tu entrevista de visa B1/B2 en español con tu perfil DS-160, calificación y plan hasta tu cita. Herramienta de práctica no oficial. Por AutoRise Solutions.",
   "lang": "es-MX",
   "start_url": "./",
   "scope": "./",

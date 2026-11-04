@@ -8,8 +8,8 @@
 <link rel="icon" type="image/png" href="icons/icono-192.png">
 <link rel="apple-touch-icon" href="icons/icono-180.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
-<title>Simulador de entrevista de visa B1/B2</title>
-<meta name="description" content="Práctica de entrevista de visa B1/B2 en español con tu perfil DS-160, evaluación y plan hasta la cita. Versión 1.">
+<title>Consul Simulator · Entrevista de visa B1/B2</title>
+<meta name="description" content="Consul Simulator: práctica de entrevista de visa B1/B2 en español con tu perfil DS-160, evaluación y plan hasta la cita. Herramienta de práctica no oficial.">
 <style>
 :root{
   --verde:#0E5E5A; --agua:#CFE8E4; --ambar:#E3A21A; --tinta:#132220; --niebla:#F4F7F6;
@@ -96,6 +96,14 @@ table{width:100%;border-collapse:collapse;font-size:.92rem}
 th,td{text-align:left;padding:6px;border-bottom:1px solid var(--brd);vertical-align:top}
 .tablewrap{overflow-x:auto}
 footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
+/* Carga de DS-160 */
+.dsrows{border:1px solid var(--brd);border-radius:8px;overflow:hidden}
+.dsrow{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;padding:10px;border-bottom:1px solid var(--brd)}
+.dsrow:last-child{border-bottom:0}.dshead{display:none;font-weight:700;background:var(--chip);color:var(--chip-txt)}
+.dscheck{display:flex;gap:10px;align-items:flex-start;margin:0}.dscheck input{width:22px;height:22px;flex:none;margin:0}
+.dsact{font-size:.9rem;color:var(--txt2)}.dsact small{font-weight:700}
+.dsrow .tip{display:block;margin-top:2px}
+@media(min-width:700px){.dsrow{grid-template-columns:1.1fr 1.6fr 1fr;align-items:start}.dshead{display:grid}.dsact small{display:none}}
 .hidden{display:none!important}
 .chart{width:100%;height:auto;max-height:240px}
 @media(max-width:480px){h1{font-size:1.3rem}.big{font-size:2.2rem}.bubble{font-size:1.1rem}}
@@ -103,7 +111,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Simulador de entrevista de visa B1/B2<small>Práctica en español · versión 1 · 3-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.1 · 4-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
@@ -125,6 +133,14 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
     <h2>Tu perfil DS-160</h2>
     <p class="tip">Captura lo mismo que declaraste en tu DS-160. El simulador compara tus respuestas contra estos datos. Se guarda solo en este navegador. Usa datos ficticios si solo quieres probar.</p>
     <div class="row"><button class="btn acc" id="btnEjemplo" type="button">Cargar ejemplo</button><button class="btn sec" id="btnLimpiar" type="button">Limpiar formulario</button><span id="msgGuardado" class="tip" role="status"></span></div>
+  </div>
+  <div class="card" id="cardDS160">
+    <h2>Cargar mi DS-160 (PDF)</h2>
+    <p class="tip">Sube el PDF de tu solicitud DS-160 (o la hoja de confirmación) y el simulador llenará tu perfil. El PDF se lee <strong>dentro de tu celular</strong>: no se sube a ningún servidor. Antes de llenar nada te muestro lo que encontré para que lo confirmes. Nunca se guardan ni se muestran tu número de pasaporte, CURP, número de confirmación, teléfonos, correo ni domicilio.</p>
+    <label for="fileDS160">Elige el PDF <span class="h">Se abre Archivos, Descargas o Drive</span></label>
+    <input id="fileDS160" type="file" accept="application/pdf,.pdf">
+    <p class="tip" id="msgDS160" role="status" aria-live="polite"></p>
+    <div id="confDS160" class="hidden"></div>
   </div>
   <form id="formPerfil" autocomplete="off" novalidate>
   <fieldset><legend>Datos personales</legend><div class="grid">
@@ -952,6 +968,182 @@ function pintarPlan(){
   } else { $('planHoy').innerHTML=''; $('planRutina').innerHTML='<p>Cuando captures una fecha de cita futura, aquí aparecerá tu rutina diaria.</p>'; }
   pintarChecks($('chkDocs'),DOCS,'doc_'); pintarChecks($('chkDia'),DIA,'dia_');
 }
+
+/* ======================================================================
+   CARGAR DS-160 (PDF) -> perfil. Todo ocurre en el navegador (pdf.js local).
+   Nunca se extrae pasaporte, CURP, confirmación, teléfonos, correo ni domicilio.
+   ====================================================================== */
+const DS = (function(){
+  const MES={JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,SEPT:9,OCT:10,NOV:11,DEC:12,ENE:1,ABR:4,AGO:8,DIC:12};
+  const DEFS=[ // campo del perfil, etiqueta visible, tipo
+    ['nombre','Nombre','text'],['edad','Edad (calculada de la fecha de nacimiento)','number'],['estadoCivil','Estado civil','sel'],
+    ['estudios','Estudios','text'],['empresa','Empresa o escuela actual','text'],['puesto','Puesto o funciones','text'],
+    ['ingresoActual','Fecha de ingreso al trabajo actual','date'],['salario','Ingreso mensual (MXN)','number'],
+    ['trabAntEmpresa','Trabajo anterior (empresa)','text'],['trabAntInicio','Trabajo anterior: inicio','date'],['trabAntFin','Trabajo anterior: fin','date'],
+    ['llegada','Fecha de llegada a EUA','date'],['dias','Días de estancia','number'],['ciudad','Ciudad de destino','text'],['hospedaje','Hospedaje','text'],
+    ['quienPaga','¿Quién paga el viaje?','sel'],['pagaDetalle','Detalle de quién paga','text'],['acompNombre','Acompañante (nombre)','text'],['acompRelacion','Relación con el acompañante','text'],
+    ['viajesPrev','Viajes anteriores a EUA','text'],['visaNegada','¿Visas negadas antes?','sel'],['familiaEUA','Familia en EUA','text'],['redes','Redes sociales declaradas','text']];
+  const norm=s=>s.replace(/\s+/g,' ').trim();
+  const tcase=s=>norm(s).toLowerCase().replace(/(^|[\s\-'.])([a-záéíóúñü])/g,(m,a,b)=>a+b.toUpperCase());
+  function fecha(s){ if(!s) return ''; s=s.toUpperCase();
+    let m=/(\d{1,2})[\s\-\/.]([A-Z]{3,4})[\s\-\/.,]+(\d{4})/.exec(s); if(m&&MES[m[2]]) return iso(+m[3],MES[m[2]],+m[1]);
+    m=/(\d{4})-(\d{2})-(\d{2})/.exec(s); if(m) return iso(+m[1],+m[2],+m[3]);
+    m=/(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s); if(m){ let d=+m[1],mo=+m[2]; if(mo>12){const t=d;d=mo;mo=t;} return iso(+m[3],mo,d); }
+    return ''; }
+  const iso=(y,m,d)=>y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  function edadDe(f){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(f); if(!m) return 0; const h=new Date(); let e=h.getFullYear()-+m[1]; if(h.getMonth()+1<+m[2]||(h.getMonth()+1===+m[2]&&h.getDate()<+m[3])) e--; return e; }
+  const REL={FRIEND:'amigo(a)',AUNT:'tía',UNCLE:'tío',COUSIN:'primo(a)',SPOUSE:'cónyuge',PARENT:'padre o madre',MOTHER:'madre',FATHER:'padre',CHILD:'hijo(a)',SON:'hijo',HUSBAND:'esposo',WIFE:'esposa',DAUGHTER:'hija',SIBLING:'hermano(a)',BROTHER:'hermano',SISTER:'hermana',RELATIVE:'familiar',OTHER:'otro',BUSINESS:'socio o colega','BUSINESS ASSOCIATE':'socio o colega',FIANCE:'pareja',GRANDPARENT:'abuelo(a)'};
+  const rel=s=>REL[norm(s).toUpperCase()]||norm(s).toLowerCase();
+  const estat=s=>{ const t=s.toUpperCase(); return /CITIZEN/.test(t)?'ciudadano(a) de EUA':/PERMANENT|LPR/.test(t)?'residente permanente':/NONIMMIGRANT/.test(t)?'no inmigrante':/OTHER|DON/.test(t)?'otro o no sabe':s.toLowerCase(); };
+  function dias(t){ if(!t) return 0; const m=/(\d+)\s*(DAY|DÍA|DIA|WEEK|SEMANA|MONTH|MES|YEAR|AÑO|ANO)/i.exec(t); if(!m) return 0; const n=+m[1], u=m[2].toUpperCase();
+    return /^(DAY|DÍA|DIA)/.test(u)?n:/^(WEEK|SEMANA)/.test(u)?n*7:/^(MONTH|MES)/.test(u)?n*30:n*365; }
+
+  // Búsqueda de "Etiqueta: valor" o "Etiqueta" + valor en la línea siguiente, dentro de [desde, hasta).
+  // Regla: si hay duda, el campo queda vacío (mejor vacío que equivocado).
+  const NA=/^(N\/?A|DOES NOT APPLY|NONE|NO APLICA|NINGUNO|NINGUNA|NOT APPLICABLE)\.?$/i;
+  // Encabezados y preguntas que cierran una sección: ningún campo toma datos de otra sección
+  const LIMITE=/^(PERSONAL INFORMATION|TRAVEL INFORMATION|TRAVEL COMPANIONS?|PERSONS? TRAVELING WITH YOU|ARE THERE OTHER PERSONS TRAVELING|PREVIOUS U\.?S\.? TRAVEL|HAVE YOU EVER BEEN IN THE U\.?S|HAVE YOU EVER BEEN REFUSED|ADDRESS AND PHONE|HOME ADDRESS|PASSPORT|U\.?S\.? (POINT OF )?CONTACT|FAMILY INFORMATION|DO YOU HAVE ANY (IMMEDIATE )?RELATIVES|PRESENT WORK|PRESENT EMPLOYER|PREVIOUS WORK|WERE YOU PREVIOUSLY EMPLOYED|PREVIOUS EMPLOYER|EDUCATION|HAVE YOU ATTENDED|NAME OF (THE )?SCHOOL|NAME OF INSTITUTION|SOCIAL MEDIA|ADDITIONAL WORK|SECURITY AND BACKGROUND|PERSON\/ENTITY PAYING)/i;
+  function crear(lines){
+    const n=lines.length;
+    const eslabel=l=>/^[^:]{2,90}:/.test(l); // otra etiqueta "Algo: ..." no es un valor
+    const sinYN=l=>l.replace(/\s+(YES|NO|SÍ|SI)\s*$/i,'');
+    // La línea i coincide sola, o unida con la siguiente (preguntas partidas en 2 o 3 líneas),
+    // siempre que la coincidencia empiece en la línea i.
+    function en(re,i){ if(re.test(lines[i])) return true; let j=sinYN(lines[i]);
+      for(let k=1;k<=2&&i+k<n;k++){ j+=' '+sinYN(lines[i+k]); const m=re.exec(j); if(m&&m.index<sinYN(lines[i]).length) return true; } return false; }
+    function idx(re,desde=0,hasta=n){ for(let i=Math.max(0,desde);i<Math.min(hasta,n);i++) if(en(re,i)) return i; return -1; }
+    function fin(i,max=16){ for(let j=i+1;j<Math.min(n,i+max);j++) if(LIMITE.test(lines[j])) return j; return Math.min(n,i+max); }
+    function limpio(v){ v=norm(v); return NA.test(v)?'':v; }
+    function val(label,desde=0,hasta=n){
+      const re=new RegExp('^\\s*(?:'+label+')\\s*(?:[:\\-]\\s*|$)(.*)$','i');
+      for(let i=Math.max(0,desde);i<Math.min(hasta,n);i++){
+        const m=re.exec(lines[i]); if(!m) continue;
+        const crudo=norm(m[1]); if(crudo) return {v:limpio(crudo),i};
+        const j=i+1; if(j<Math.min(hasta,n)){ const s=norm(lines[j]); if(s&&!eslabel(s)&&!LIMITE.test(s)) return {v:limpio(s),i:j}; }
+        return {v:'',i};
+      }
+      return null; }
+    function yn(re,desde=0,hasta=n){ const i=idx(re,desde,hasta); if(i<0) return null;
+      for(let j=i;j<Math.min(i+4,n);j++){ const m=/(?:^|[:?\s])(yes|no|sí|si)\s*$/i.exec(norm(lines[j])); if(m) return /^y|^s/i.test(m[1]); if(j>i&&LIMITE.test(lines[j])) break; }
+      return null; }
+    return {idx,val,yn,fin}; }
+
+  function parsear(texto){
+    const lines=texto.split(/\n/).map(norm).filter(Boolean); const f=crear(lines); const R={}; const n=lines.length;
+    const put=(k,v)=>{ if(v!==undefined&&v!==null&&v!=='') R[k]=v; };
+    const nom=(a,b)=>tcase(((b&&b.v)||'')+' '+((a&&a.v)||''));
+    // Nombre y edad (primera aparición = solicitante)
+    const otro=f.idx(/Persons? Traveling With You|Travel Companions?|Relatives?|Person\/Entity Paying|Spouse|Father|Mother|Present Employer|U\.?S\.? (Point of )?Contact/i); const finNom=otro>=0?otro:n;
+    const ap=f.val('Surnames?|Apellidos?',0,finNom), no=f.val('Given Names?|Nombres?',0,finNom), fn=f.val('Full Name',0,finNom);
+    if((ap&&ap.v)||(no&&no.v)) put('nombre',nom(ap,no)); else if(fn) put('nombre',tcase(fn.v));
+    const fnac=f.val('Date of Birth|Fecha de nacimiento'); if(fnac){ const e=edadDe(fecha(fnac.v)); if(e>0) put('edad',e); }
+    const ec=f.val('Marital Status|Estado civil'); if(ec){ const t=ec.v.toUpperCase();
+      put('estadoCivil',/MARRIED|CASAD/.test(t)?'casado':/COMMON|UNION|PARTNER|CIVIL/.test(t)?'union':/DIVORC|SEPARAT/.test(t)?'divorciado':/WIDOW|VIUD/.test(t)?'viudo':/SINGLE|SOLTER/.test(t)?'soltero':''); }
+    // Viaje: solo antes de "Previous U.S. Travel" (para no tomar la estancia de un viaje anterior)
+    const rePrev=/PREVIOUS U\.?S\.? TRAVEL|HAVE YOU EVER BEEN IN THE U\.?S/i;
+    const ip=f.idx(rePrev); const finViaje=ip>=0?ip:n;
+    const ll=f.val('Intended Date of Arrival|Fecha (?:prevista )?de llegada',0,finViaje); if(ll) put('llegada',fecha(ll.v));
+    const st=f.val('Intended Length of Stay(?: in (?:the )?U\\.?S\\.?)?|Length of Stay|Duraci[oó]n de la estancia',0,finViaje);
+    if(st){ let t=st.v; if(t&&!/[A-Za-z]/.test(t)&&st.i+1<finViaje) t+=' '+lines[st.i+1]; const d=dias(t); if(d) put('dias',d); }
+    const aw=f.idx(/^(Address Where You Will Stay|(?:U\.?S\.? )?Street Address|Hospedaje)/i,0,finViaje);
+    if(aw>=0){ const win=Math.min(f.fin(aw,10),finViaje);
+      const hv=f.val('Address Where You Will Stay(?: in (?:the )?U\\.?S\\.?)?|Hospedaje',aw,aw+2);
+      const calle=f.val('(?:U\\.?S\\.? )?Street Address(?: \\(Line 1\\))?',aw,win);
+      const ci=f.val('City|Ciudad',aw,win), es=f.val('State|Estado',aw,win);
+      let hosp=hv&&hv.v?tcase(hv.v):''; if(calle&&calle.v&&!hosp.includes(calle.v)) hosp=hosp?hosp+', '+tcase(calle.v):tcase(calle.v);
+      put('hospedaje',hosp); if(ci&&ci.v) put('ciudad',tcase(ci.v)+(es&&es.v?', '+es.v.toUpperCase():'')); }
+    const pg=f.val('Person\\/Entity Paying for Your Trip|Who Is Paying for Your Trip|Qui[eé]n paga',0,finViaje); if(pg&&pg.v){ const t=pg.v.toUpperCase();
+      put('quienPaga',/SELF|YO\b|MISMO/.test(t)?'yo':/SPOUSE|PAREJA/.test(t)?'pareja':/EMPLOYER|COMPANY|ORGANIZ|EMPRESA/.test(t)?'empresa':/RELATIVE|FAMIL/.test(t)?'familiar':/OTHER|ANOTHER|PERSON/.test(t)?'otro':'');
+      if(!/SELF/.test(t)){ const w=f.fin(pg.i,8); const a=f.val('Surnames?(?: of Person Paying for Trip)?',pg.i,w), b=f.val('Given Names?(?: of Person Paying for Trip)?',pg.i,w), o=f.val('Name of (?:Company|Organization)|Company\\/Organization Name',pg.i,w);
+        put('pagaDetalle',nom(a,b).trim()||(o&&tcase(o.v))); } else put('pagaDetalle','con recursos propios'); }
+    const ac=f.idx(/Persons? Traveling With You|Travel(?:ing)? Companions?|Acompa[ñn]antes?/i,0,finViaje);
+    if(ac>=0){ const sinAc=f.yn(/Are there other persons traveling with you/i,ac,ac+1)===false;
+      if(!sinAc){ const w=Math.min(f.fin(ac,12),finViaje>ac?finViaje:n);
+        const a=f.val('Surnames?(?: of Person Traveling With You)?',ac,w), b=f.val('Given Names?(?: of Person Traveling With You)?',ac,w), r=f.val('Relationship(?: with Person| to You)?|Relaci[oó]n',ac,w);
+        const nm=nom(a,b); if(nm) put('acompNombre',nm); if(r&&r.v) put('acompRelacion',rel(r.v)); } }
+    // Viajes previos y visa negada
+    const en=f.yn(/Have you ever been in the U\.?S\.?/i);
+    if(en===false) put('viajesPrev','ninguno'); else if(en===true){ const i=f.idx(/Have you ever been in the U\.?S\.?/i); const w=f.fin(i,10); const da=f.val('Date Arrived|Fecha de llegada',i,w), ls=f.val('Length of Stay',i,w);
+      put('viajesPrev','Sí'+(da&&da.v?', última vez '+(fecha(da.v)||da.v):'')+(ls&&ls.v?' ('+ls.v.toLowerCase()+')':'')); }
+    const vn=f.yn(/Have you ever been refused a U\.?S\.? Visa|Se le ha negado/i); if(vn!==null) put('visaNegada',vn?'si':'no');
+    // Trabajo actual: termina donde empieza el trabajo anterior
+    const pe=f.idx(/Present Employer or School Name|Empleador actual/i);
+    const rePrevTrab=/Previous Work|Were you previously employed|Previous Employer Name|Empleador anterior/i;
+    if(pe>=0){ const pr0=f.idx(rePrevTrab,pe+1); const w=Math.min(f.fin(pe,16),pr0>pe?pr0:n);
+      const nm=f.val('Present Employer or School Name|Empleador actual',pe,pe+2); if(nm) put('empresa',nm.v);
+      const sd=f.val('Start Date|Fecha de inicio',pe,w); if(sd) put('ingresoActual',fecha(sd.v));
+      const mi=f.val('Monthly (?:Monetary )?Income(?: \\(?in Local Currency\\)?)?(?: \\(if employed\\))?|Monthly Salary(?: in Local Currency)?(?: \\(if employed\\))?|Ingreso mensual',pe,w);
+      if(mi&&mi.v){ const x=/^[^\d]*([\d][\d,\.]*)/.exec(mi.v); if(x){ const num=+x[1].replace(/,/g,''); if(num>0) put('salario',Math.round(num)); } }
+      const jt=f.val('Job Title|Puesto',pe,w), du=f.val('Briefly describe your duties|Duties|Funciones',pe,w);
+      put('puesto',(jt&&jt.v)||(du&&du.v.slice(0,90))||''); }
+    // Trabajo anterior (si respondió que no tuvo, se deja vacío)
+    const pr=f.idx(rePrevTrab);
+    if(pr>=0&&f.yn(/Were you previously employed/i,pr,pr+1)!==false){
+      let w=pr+16; for(let j=pr+1;j<Math.min(n,pr+16);j++){ if(/^(EDUCATION|HAVE YOU ATTENDED|NAME OF (THE )?SCHOOL|NAME OF INSTITUTION|SOCIAL MEDIA|ADDITIONAL WORK|SECURITY|PRESENT )/i.test(lines[j])){ w=j; break; } }
+      const nm=f.val('(?:Previous )?Employer Name|Empleador anterior',pr,w); if(nm) put('trabAntEmpresa',nm.v);
+      const d1=f.val('Employment Date From|Fecha de inicio',pr,w), d2=f.val('Employment Date To|Fecha de t[eé]rmino',pr,w);
+      if(d1) put('trabAntInicio',fecha(d1.v)); if(d2) put('trabAntFin',fecha(d2.v)); }
+    // Estudios
+    const sc=f.val('Name of the School|Name of School|Name of (?:the )?Institution|Nombre de la escuela');
+    if(sc&&sc.v){ let w=sc.i+8; for(let j=sc.i+1;j<Math.min(n,sc.i+8);j++){ if(/^(SOCIAL MEDIA|NAME OF (THE )?SCHOOL|NAME OF INSTITUTION|ADDITIONAL|SECURITY)/i.test(lines[j])){ w=j; break; } }
+      const cs=f.val('Course of Study|Carrera|Curso',sc.i,w); put('estudios',(cs&&cs.v?tcase(cs.v)+' – ':'')+tcase(sc.v)); }
+    // Redes sociales (puede haber varias; N/A, NONE, DOES NOT APPLY = ninguna)
+    const rs=[]; let hayRedes=false; lines.forEach((l,i)=>{ const m=/^\s*Social Media Provider\/Platform\s*[:\-]?\s*(.*)$/i.exec(l); if(!m) return; hayRedes=true; let v=norm(m[1]); if(!v&&lines[i+1]&&!/^[^:]{2,90}:/.test(lines[i+1])) v=norm(lines[i+1]); if(v&&!NA.test(v)&&!/:\s*$/.test(v)) rs.push(tcase(v)); });
+    if(hayRedes) R.redes=[...new Set(rs)].join(', ');
+    // Familiares en EUA
+    const reRel=/relatives?(?:, not including parents,?)? in the (?:U\.?S\.?|United States)/i;
+    const rl=f.idx(reRel);
+    if(rl>=0){ const ynr=f.yn(reRel,rl,rl+1);
+      if(ynr===false) R.familiaEUA='';
+      else if(ynr===true){ const w=f.fin(rl,14); const a=f.val("Relative'?s? Surnames?|Surnames?",rl,w), b=f.val("Relative'?s? Given Names?|Given Names?",rl,w), r=f.val('Relationship to You|Relationship',rl,w), s=f.val('Relative.?s? (?:U\\.?S\\.? )?Status|Status',rl,w);
+        const nm=nom(a,b); if(nm) R.familiaEUA=nm+(r&&r.v?' ('+rel(r.v)+')':'')+(s&&s.v?', estatus '+estat(s.v):''); } }
+    return R; }
+
+  let _pdfjs=null;
+  async function cargarPdfjs(){ if(_pdfjs) return _pdfjs; const base=new URL('vendor/pdfjs/',location.href);
+    const m=await import(new URL('pdf.min.mjs',base).href); m.GlobalWorkerOptions.workerSrc=new URL('pdf.worker.min.mjs',base).href; _pdfjs=m; return m; }
+  async function textoDePdf(buf){
+    const pdfjs=await cargarPdfjs(); const doc=await pdfjs.getDocument({data:buf,isEvalSupported:false}).promise; let out=[];
+    for(let p=1;p<=doc.numPages;p++){ const pg=await doc.getPage(p); const tc=await pg.getTextContent(); const filas=[];
+      tc.items.forEach(it=>{ if(!it.str||!it.str.trim()) return; const y=Math.round(it.transform[5]), x=it.transform[4]; let fl=filas.find(r=>Math.abs(r.y-y)<=3); if(!fl){ fl={y,it:[]}; filas.push(fl); } fl.it.push({x,s:it.str}); });
+      filas.sort((a,b)=>b.y-a.y); filas.forEach(r=>{ r.it.sort((a,b)=>a.x-b.x); out.push(r.it.map(i=>i.s).join(' ')); }); out.push(''); }
+    await doc.destroy(); return out.join('\n'); }
+  return {DEFS,parsear,textoDePdf,fecha,edadDe};
+})();
+
+function mostrarConfirmacionDS160(R){
+  const act=leerPerfil(); const box=$('confDS160'); const total=DS.DEFS.length; const hall=DS.DEFS.filter(d=>d[0] in R).length;
+  const opts={estadoCivil:[['soltero','Soltero(a)'],['casado','Casado(a)'],['union','Unión libre'],['divorciado','Divorciado(a)'],['viudo','Viudo(a)']],quienPaga:[['yo','Yo'],['familiar','Un familiar'],['empresa','Mi empresa'],['pareja','Mi pareja'],['otro','Otra persona']],visaNegada:[['no','No'],['si','Sí']]};
+  const mostrarAct=(k)=>{ const v=act[k]; if(v===''||v===0||v==null) return '—'; const o=opts[k]&&opts[k].find(x=>x[0]===v); return o?o[1]:String(v); };
+  let h='<div class="alert info"><strong>Confirma lo que encontré.</strong> Encontré '+hall+' de '+total+' campos. Marca los que quieras pasar a tu perfil y corrige lo que haga falta. Si no marcas un campo, tu dato actual no cambia.</div><div class="dsrows" role="table" aria-label="Datos encontrados en tu DS-160"><div class="dsrow dshead" role="row"><div role="columnheader">Campo</div><div role="columnheader">Dato encontrado en tu DS-160</div><div role="columnheader">Dato actual</div></div>';
+  DS.DEFS.forEach(([k,lab,tipo])=>{ const ok=k in R; const v=ok?R[k]:'';
+    let inp; if(tipo==='sel') inp='<select id="ds_'+k+'" '+(ok?'':'disabled')+'>'+opts[k].map(o=>'<option value="'+o[0]+'"'+(o[0]===v?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+    else inp='<input id="ds_'+k+'" type="'+tipo+'" value="'+U.esc(String(v))+'" '+(ok?'':'disabled placeholder="No se encontró, captúralo a mano"')+'>';
+    h+='<div class="dsrow" role="row"><div role="cell" class="dscampo"><label class="dscheck"><input type="checkbox" id="dsc_'+k+'" '+(ok?'checked':'disabled')+' data-k="'+k+'"><span>'+U.esc(lab)+'</span></label></div><div role="cell">'+inp+(ok&&v===''?'<span class="tip">La solicitud dice que no hay.</span>':'')+(ok?'':'<span class="tip">No se encontró, captúralo a mano.</span>')+'</div><div role="cell" class="dsact"><small>Dato actual</small> '+U.esc(mostrarAct(k))+'</div></div>'; });
+  h+='</div><div class="row" style="margin-top:12px"><button class="btn" id="btnConfDS" type="button">Confirmar y pasar al perfil</button><button class="btn sec" id="btnCancDS" type="button">Cancelar</button></div>';
+  box.innerHTML=h; box.classList.remove('hidden');
+  DS.DEFS.forEach(([k])=>{ const c=$('dsc_'+k); if(c) c.addEventListener('change',()=>{ $('ds_'+k).disabled=!c.checked; }); });
+  $('btnCancDS').addEventListener('click',()=>{ box.classList.add('hidden'); box.innerHTML=''; $('msgDS160').textContent='Carga cancelada. No se cambió tu perfil.'; $('fileDS160').value=''; });
+  $('btnConfDS').addEventListener('click',()=>{
+    const nuevo={}; let n=0;
+    DS.DEFS.forEach(([k,,tipo])=>{ const c=$('dsc_'+k); if(!c||!c.checked) return; let v=$('ds_'+k).value; if(tipo==='number') v=v===''?0:+v; nuevo[k]=v; n++; });
+    escribirPerfil(nuevo); guardarPerfil(); pintarValidaciones();
+    box.classList.add('hidden'); box.innerHTML=''; $('fileDS160').value='';
+    $('msgDS160').textContent='Se cargaron '+n+' de '+total+' campos. Revísalos: el simulador compara tus respuestas contra estos datos.';
+    $('msgDS160').scrollIntoView&&$('msgDS160').scrollIntoView({block:'nearest'}); });
+}
+$('fileDS160').addEventListener('change',async ev=>{
+  const f=ev.target.files&&ev.target.files[0]; const msg=$('msgDS160'); const box=$('confDS160'); box.classList.add('hidden'); box.innerHTML=''; if(!f) return;
+  msg.textContent='Leyendo el PDF en tu dispositivo…';
+  try{
+    const buf=await f.arrayBuffer(); const texto=await DS.textoDePdf(new Uint8Array(buf));
+    if(texto.replace(/\s/g,'').length<40){ msg.textContent='Tu PDF es una imagen (escaneado) y no tiene texto que pueda leer. Captura los datos a mano en el formulario de abajo.'; return; }
+    const R=DS.parsear(texto);
+    if(!Object.keys(R).length){ msg.textContent='Leí el PDF pero no reconocí datos de una DS-160. Revisa que sea la solicitud o la hoja de confirmación, o captura los datos a mano.'; return; }
+    const solo=Object.keys(R).length<=3?' Este PDF trae pocos datos (la hoja de confirmación solo incluye nombre y fecha de nacimiento): lo demás captúralo a mano.':'';
+    msg.textContent='Listo. Revisa abajo lo que encontré antes de pasarlo a tu perfil.'+solo; mostrarConfirmacionDS160(R);
+  }catch(e){ msg.textContent='No pude leer ese PDF (puede estar dañado, protegido con contraseña o este dispositivo no lo permite). Puedes capturar tus datos a mano en el formulario de abajo.'; }
+});
 
 /* ======================================================================
    ARRANQUE

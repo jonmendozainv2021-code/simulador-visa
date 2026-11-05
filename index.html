@@ -104,6 +104,21 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 .dsact{font-size:.9rem;color:var(--txt2)}.dsact small{font-weight:700}
 .dsrow .tip{display:block;margin-top:2px}
 @media(min-width:700px){.dsrow{grid-template-columns:1.1fr 1.6fr 1fr;align-items:start}.dshead{display:grid}.dsact small{display:none}}
+/* Entrevista v1.4: botón de voz principal, Enviar aparte */
+.btn.chico{padding:6px 12px;font-size:.9rem}
+.btn.mic{display:flex;width:100%;align-items:center;justify-content:center;gap:10px;padding:16px;min-height:58px;font-size:1.15rem;margin:12px 0 4px;border-radius:12px}
+.btn.mic svg{flex:none;width:26px;height:26px}
+.btn.mic.grabando{background:var(--ambar);color:var(--tinta);animation:pulso 1.4s ease-in-out infinite}
+@keyframes pulso{0%,100%{box-shadow:0 0 0 0 rgba(227,162,26,.55)}50%{box-shadow:0 0 0 8px rgba(227,162,26,0)}}
+@media (prefers-reduced-motion: reduce){.btn.mic.grabando{animation:none}}
+.btn.mic.nodisp{background:transparent;color:var(--verde);border:2px dashed var(--verde);font-size:1rem}
+:root[data-theme="dark"] .btn.mic.nodisp{color:#7fd0c8;border-color:#7fd0c8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.mic.nodisp{color:#7fd0c8;border-color:#7fd0c8}}
+.fila-enviar{display:flex;justify-content:flex-end;margin-top:12px}
+.fila-enviar .btn{min-width:55%}
+.fila-fin{display:flex;justify-content:center;margin-top:20px;padding-top:8px;border-top:1px solid var(--brd)}
+.btn.link{background:transparent;color:var(--txt2);border:0;text-decoration:underline;font-weight:600;font-size:.85rem;padding:6px 8px}
+.nivel-hoy{background:var(--chip);color:var(--chip-txt);border-radius:8px;padding:8px 12px;font-weight:600;font-size:.95rem}
 .hidden{display:none!important}
 .chart{width:100%;height:auto;max-height:240px}
 @media(max-width:480px){h1{font-size:1.3rem}.big{font-size:2.2rem}.bubble{font-size:1.1rem}}
@@ -111,7 +126,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.3 · 4-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.4 · 5-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
@@ -194,12 +209,13 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 <section class="panel" id="tab-entrevista">
   <div class="card" id="entIntro">
     <h2>Entrevista de práctica</h2>
-    <p>El cónsul te hará de 8 a 15 preguntas según tu perfil. Contesta corto y con la verdad: 1 a 3 frases.</p>
+    <p>El cónsul te hará de 10 a 17 preguntas según tu perfil y tu nivel. Cambian en cada práctica. Contesta corto y con la verdad: 1 a 3 frases.</p>
     <div class="grid">
       <div><label for="selLang">Idioma del cónsul</label><select id="selLang"><option value="es">Español (México)</option><option value="en">English</option></select></div>
       <div><label for="selVoz">Voz del cónsul</label><select id="selVoz"><option value="on">Activada</option><option value="off">Solo texto</option></select></div>
     </div>
     <p class="tip" id="msgVoz"></p>
+    <p id="entNivel" class="nivel-hoy"></p>
     <div id="entMotivos" class="tip"></div>
     <div class="row" style="margin-top:10px"><button class="btn" id="btnComenzar" type="button">Comenzar entrevista</button></div>
   </div>
@@ -208,11 +224,14 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
     <div class="bar" aria-hidden="true"><i id="entBarra" style="width:0%"></i></div>
     <div id="entSegTag"></div>
     <div class="bubble" id="entPregunta" aria-live="polite"></div>
-    <div class="row"><button class="btn sec" id="btnRepetir" type="button">Repetir pregunta</button><button class="btn sec" id="btnMic" type="button">Responder con voz</button></div>
-    <p class="tip hidden" id="msgMic"></p>
-    <label for="entRespuesta" style="margin-top:10px">Tu respuesta</label>
-    <textarea id="entRespuesta" placeholder="Escribe tu respuesta o díctala con el micrófono del teclado"></textarea>
-    <div class="row" style="margin-top:10px"><button class="btn" id="btnEnviar" type="button">Enviar respuesta</button><button class="btn sec" id="btnAbandonar" type="button">Terminar sin evaluar</button></div>
+    <div class="row"><button class="btn sec chico" id="btnRepetir" type="button">Repetir pregunta</button></div>
+    <button class="btn mic" id="btnMic" type="button" aria-pressed="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M8 21h8"/></svg><span id="micTxt">Responder con voz</span></button>
+    <p class="tip hidden" id="msgMic" role="status"></p>
+    <label for="entRespuesta" style="margin-top:12px">Tu respuesta</label>
+    <textarea id="entRespuesta" placeholder="Toca aquí para escribir, o usa el botón de voz"></textarea>
+    <div class="fila-enviar"><button class="btn" id="btnEnviar" type="button" disabled>Enviar respuesta</button></div>
+    <p class="tip hidden" id="msgEnviar" style="text-align:right">Escribe o dicta tu respuesta para poder enviarla.</p>
+    <div class="fila-fin"><button class="btn link" id="btnAbandonar" type="button">Terminar sin evaluar</button></div>
   </div>
 </section>
 
@@ -528,54 +547,143 @@ const MotorConsul = (function(){
     estudios(tn,p){ const f=U.frac(tn,U.tokens(p.estudios)); if(f==null) return null; return f>0?{score:100,alertas:[],notas:[]}:{score:55,alertas:[],notas:['En tu perfil: '+p.estudios+'.']}; }
   };
 
-  // ---------- Banco de preguntas ----------
-  // Campos: tema (A-M de la base de conocimiento), orden, es/en, espera (regex de lo que debería contener),
-  // corta (sí/no), verifica (clave de CHK), busca, tip, seg (seguimientos).
-  function Q(id,tema,orden,es,en,o){ return Object.assign({id,tema,orden,es,en},o||{}); }
+  // ---------- Banco de preguntas (v1.4: 80+ preguntas, nivel, variantes) ----------
+  // Campos: tema (A-N de la base de conocimiento), orden, es/en (texto o lista de 2-3 formas de decir lo mismo,
+  // alineadas es[i] <-> en[i]), n (nivel 1 básica, 2 media, 3 difícil), espera (regex de lo que debería contener),
+  // corta (sí/no), verifica (clave de CHK), si (condición del perfil: acomp, familia, viajes, trabAnt),
+  // ob (obligatoria), busca, tip, seg (seguimientos). Regla: los tips siempre piden la verdad, coherente con la DS-160.
+  function Q(id,tema,orden,es,en,o){
+    const esA=Array.isArray(es)?es:[es], enA=Array.isArray(en)?en:[en];
+    return Object.assign({id,tema,orden,es:esA[0],en:enA[0],esAlt:esA,enAlt:enA,n:1},o||{}); }
   const SEG_SINO=/\b(si|no|yes)\b/;
+  const NUM=/\d|mil|peso|mxn|dolar|dollar|thousand|hundred|cien|quinientos/;
+  const TEMAS={A:'Propósito del viaje',B:'Viaje e itinerario',C:'Hospedaje',D:'Acompañantes',E:'Trabajo',F:'Dinero y quién paga',G:'Arraigo en México',H:'Familia en EUA',I:'Estudios',J:'Viajes y visas anteriores',K:'Historial legal',L:'Redes sociales',M:'Coherencia de datos',N:'Preguntas de seguridad'};
+  const BLOQUE={A:0,B:1,C:1,D:1,E:2,I:2,F:3,G:4,H:4,J:5,K:5,L:5,N:5,M:9};
+  const TV='Di la verdad, coherente con tu DS-160.';
   const bancoPreguntas={
-    q_proposito:Q('q_proposito','A',10,'¿Cuál es el propósito de su viaje a Estados Unidos?','What is the purpose of your trip to the United States?',{espera:/turis|vacac|pasear|conocer|visit|negocio|conferencia|congreso|descans|tourism|vacation|business|trip|travel|vengo|voy a/,busca:'Un propósito concreto, corto y permitido (turismo o negocios).',tip:'Di el propósito en una frase y que coincida con tu DS-160. Sin "a ver qué pasa".',
+    // ===== A. Apertura: propósito =====
+    q_proposito:Q('q_proposito','A',10,['¿Cuál es el propósito de su viaje a Estados Unidos?','¿A qué va a Estados Unidos?','¿Cuál es el motivo de su viaje?'],['What is the purpose of your trip to the United States?','Why are you going to the United States?','What is the reason for your trip?'],{ob:true,espera:/turis|vacac|pasear|conocer|visit|negocio|conferencia|congreso|descans|tourism|vacation|business|trip|travel|vengo|voy a/,busca:'Un propósito concreto, corto y permitido (turismo o negocios).',tip:'Di el propósito en una frase y que coincida con tu DS-160. Sin "a ver qué pasa".',
       seg:[{re:/negocio|reunion|conferencia|congreso|junta|business|meeting|conference/,id:'s_negocio',es:'¿Con qué empresa o evento se va a reunir y quién lo invitó?',en:'Which company or event will you attend, and who invited you?'}]}),
-    q_porque_ahora:Q('q_porque_ahora','A',12,'¿Por qué quiere viajar ahora?','Why do you want to travel now?',{busca:'Una razón natural para esta fecha.',tip:'Una razón verdadera y simple (vacaciones aprobadas, fecha especial). No inventes urgencias.'}),
-    q_lugares:Q('q_lugares','B',20,'¿A qué ciudades o lugares va a viajar?','Which cities or places will you visit?',{verifica:'ciudad',busca:'Itinerario que suene a turismo.',tip:'Nombra los lugares de tu plan real, los mismos de tu DS-160.'}),
-    q_tiempo:Q('q_tiempo','B',22,'¿Cuánto tiempo se va a quedar?','How long will you stay?',{verifica:'dias',espera:/\d|dia|semana|mes|day|week|month|quincena|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce|catorce|quince|veinte/,busca:'Viaje corto y con regreso claro, igual que la DS-160.',tip:'Di el mismo número de días de tu DS-160. Conócelo de memoria.'}),
-    q_boletos:Q('q_boletos','B',24,'¿Ya compró sus boletos de avión o reservó hotel?','Have you bought your plane tickets or booked a hotel?',{corta:true,espera:SEG_SINO,busca:'Viaje planeado.',tip:'Contesta sí o no con la verdad. No es obligatorio comprar boletos antes de la entrevista; no compres de más por miedo.'}),
-    q_regreso:Q('q_regreso','B',26,'¿Cuándo planea regresar a México?','When do you plan to return to Mexico?',{verifica:'regreso',busca:'Fecha de regreso clara.',tip:'Di la fecha de regreso que declaraste (llegada más días de estancia).'}),
-    q_hospedaje:Q('q_hospedaje','C',30,'¿Dónde se va a hospedar?','Where will you stay?',{verifica:'hospedaje',busca:'Que el hospedaje coincida con la DS-160.',tip:'Nombre del lugar o dirección tal como en tu DS-160.',
+    q_tipoViaje:Q('q_tipoViaje','A',11,['¿Viaja por turismo, por negocios o por ambos?','¿Es un viaje de turismo o de negocios?'],['Are you traveling for tourism, business, or both?','Is this a tourism or a business trip?'],{espera:/turis|negoc|ambos|vacac|paseo|tourism|business|both|pleasure/,busca:'Que el tipo de viaje sea claro y coincida con la DS-160.',tip:'Una palabra basta: turismo, negocios o ambos. Lo mismo que en tu DS-160.'}),
+    q_primeraVez:Q('q_primeraVez','A',13,['¿Es la primera vez que solicita una visa de Estados Unidos?','¿Ha solicitado esta visa antes?'],['Is this your first time applying for a U.S. visa?','Have you applied for this visa before?'],{corta:true,espera:SEG_SINO,busca:'Historial de solicitudes.',tip:'Contesta sí o no con la verdad. Si te la negaron antes, dilo: ocultarlo es peor.'}),
+    q_porque_ahora:Q('q_porque_ahora','A',14,['¿Por qué quiere viajar ahora?','¿Por qué eligió estas fechas para viajar?','¿Por qué en este momento y no en otro?'],['Why do you want to travel now?','Why did you choose these dates?','Why now and not another time?'],{n:3,busca:'Una razón natural para esta fecha.',tip:'Una razón verdadera y simple (vacaciones aprobadas, fecha especial). No inventes urgencias.'}),
+    q_queHara:Q('q_queHara','A',15,['¿Qué va a hacer exactamente durante su visita?','Cuénteme qué planea hacer allá.','¿Qué actividades tiene planeadas?'],['What exactly will you do during your visit?','Tell me what you plan to do there.','What activities have you planned?'],{n:2,busca:'Plan concreto que suene a turismo o negocios.',tip:'Menciona 2 o 3 actividades reales de tu plan, en una o dos frases.'}),
+    q_porqueEUA:Q('q_porqueEUA','A',16,['¿Por qué eligió Estados Unidos y no otro país?','¿Por qué Estados Unidos para sus vacaciones?'],['Why did you choose the United States and not another country?','Why the United States for your vacation?'],{n:3,busca:'Una razón sencilla y creíble.',tip:'Una razón verdadera y concreta (un lugar que quieres conocer, un evento). Sin discursos.'}),
+    q_porqueCiudad:Q('q_porqueCiudad','A',17,['¿Por qué eligió esa ciudad?','¿Por qué quiere visitar esa ciudad en particular?'],['Why did you choose that city?','Why do you want to visit that city in particular?'],{n:3,verifica:'ciudad',busca:'Que la ciudad coincida con la DS-160 y la razón sea creíble.',tip:'Nombra la misma ciudad de tu DS-160 y una razón real para ir.'}),
+    // ===== B. Viaje e itinerario =====
+    q_lugares:Q('q_lugares','B',20,['¿A qué ciudades o lugares va a viajar?','¿Qué lugares va a visitar?','¿A qué ciudad va?'],['Which cities or places will you visit?','What places are you going to visit?','Which city are you going to?'],{verifica:'ciudad',busca:'Itinerario que suene a turismo.',tip:'Nombra los lugares de tu plan real, los mismos de tu DS-160.'}),
+    q_tiempo:Q('q_tiempo','B',22,['¿Cuánto tiempo se va a quedar?','¿Cuántos días va a estar en Estados Unidos?','¿De cuánto tiempo es su viaje?'],['How long will you stay?','How many days will you be in the United States?','How long is your trip?'],{verifica:'dias',espera:/\d|dia|semana|mes|day|week|month|quincena|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce|catorce|quince|veinte/,busca:'Viaje corto y con regreso claro, igual que la DS-160.',tip:'Di el mismo número de días de tu DS-160. Tenlo claro.'}),
+    q_fechaLlegada:Q('q_fechaLlegada','B',23,['¿En qué fecha piensa llegar a Estados Unidos?','¿Cuándo piensa viajar?'],['On what date do you plan to arrive in the United States?','When do you plan to travel?'],{n:2,espera:/\d|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|january|february|march|april|may|june|july|august|september|october|november|december/,busca:'Que la fecha coincida con la DS-160.',tip:'Di la fecha de llegada que declaraste en tu DS-160.'}),
+    q_boletos:Q('q_boletos','B',24,['¿Ya compró sus boletos de avión?','¿Ya tiene sus vuelos?'],['Have you bought your plane tickets?','Do you already have your flights?'],{corta:true,espera:SEG_SINO,busca:'Viaje planeado.',tip:'Contesta sí o no con la verdad. No es obligatorio comprar boletos antes de la entrevista; no compres de más por miedo.'}),
+    q_reservas:Q('q_reservas','B',25,['¿Ya reservó vuelos y hotel?','¿Tiene alguna reservación hecha?'],['Have you booked flights and a hotel?','Do you have any reservations?'],{n:2,corta:true,espera:SEG_SINO,busca:'Viaje planeado.',tip:'Responde con la verdad. Si no has reservado, dilo con calma: no es requisito.'}),
+    q_regreso:Q('q_regreso','B',26,['¿Cuándo planea regresar a México?','¿Qué día regresa?','¿Cuál es su fecha de regreso?'],['When do you plan to return to Mexico?','What day are you coming back?','What is your return date?'],{n:2,verifica:'regreso',busca:'Fecha de regreso clara.',tip:'Di la fecha de regreso que declaraste (llegada más días de estancia).'}),
+    q_otrosPaises:Q('q_otrosPaises','B',27,['¿Va a visitar otros países en este viaje?','¿Además de Estados Unidos, va a otro país?'],['Will you visit other countries on this trip?','Besides the United States, are you going to another country?'],{corta:true,espera:SEG_SINO,busca:'Itinerario completo.',tip:'Responde con la verdad y que coincida con tu plan.'}),
+    q_seguro:Q('q_seguro','B',28,['¿Tiene seguro de viaje?','¿Va a contratar un seguro de gastos médicos para el viaje?'],['Do you have travel insurance?','Will you get medical travel insurance?'],{n:2,corta:true,espera:SEG_SINO,busca:'Planeación del viaje.',tip:'Responde con la verdad. No es requisito para la visa.'}),
+    q_organizo:Q('q_organizo','B',29,['¿Quién organizó el viaje?','¿Quién planeó este viaje?'],['Who organized your trip?','Who planned this trip?'],{n:2,busca:'Que sepas quién planea y que cuadre con quién paga.',tip:'Di quién lo organizó (tú, tu familia, una agencia), con la verdad.'}),
+    q_regresoATiempo:Q('q_regresoATiempo','B',30,['¿Cómo se asegura de regresar a tiempo?','¿Qué garantiza que regresará en la fecha que dice?'],['How will you make sure you return on time?','What guarantees you will return on the date you say?'],{n:3,busca:'Compromisos reales que te hacen volver.',tip:'Menciona hechos verdaderos: tu regreso al trabajo, tu familia, tus pendientes. Sin ponerte a la defensiva.'}),
+    q_porqueFechaRegreso:Q('q_porqueFechaRegreso','B',31,['¿Por qué esa fecha de regreso y no otra?','¿Por qué regresa justo ese día?'],['Why that return date and not another?','Why are you coming back on that exact day?'],{n:3,busca:'Que la fecha tenga una razón (trabajo, permiso).',tip:'Una razón real: cuándo termina tu permiso o cuándo vuelves al trabajo.'}),
+    q_primerDia:Q('q_primerDia','B',32,['¿Qué va a hacer el primer día que llegue?','Cuénteme su plan para el primer día.'],['What will you do on your first day there?','Tell me your plan for the first day.'],{n:3,busca:'Detalle que demuestra un plan real.',tip:'Cuenta tu plan real en una frase. Si no lo tienes definido, dilo con naturalidad.'}),
+    // ===== C. Hospedaje =====
+    q_hospedaje:Q('q_hospedaje','C',40,['¿Dónde se va a hospedar?','¿Dónde se va a quedar?','¿En qué hotel o casa va a estar?'],['Where will you stay?','Where are you staying?','Which hotel or house will you stay at?'],{verifica:'hospedaje',busca:'Que el hospedaje coincida con la DS-160.',tip:'Nombre del lugar o dirección tal como en tu DS-160.',
       seg:[{re:/casa de|con mi|familiar|tia|tio|primo|amig|with my/,id:'s_dir',es:'¿Me puede dar la dirección?',en:'Can you give me the address?',verifica:'hospedaje'}]}),
-    q_acompanante:Q('q_acompanante','D',40,'¿Viaja solo o con alguien?','Are you traveling alone or with someone?',{verifica:'acompanante',busca:'Quién viaja y que cuadre con quién paga y dónde se hospeda.',tip:'Si viajas acompañado, di nombre y relación; igual que en tu DS-160.',
+    q_direccion:Q('q_direccion','C',41,['¿Me puede dar la dirección donde se va a quedar?','¿Cuál es la dirección de su hospedaje?'],['Can you give me the address where you will stay?','What is the address of your lodging?'],{n:2,verifica:'hospedaje',busca:'Que conozcas el dato y coincida con la DS-160.',tip:'La dirección o el nombre del lugar exactamente como en tu DS-160.'}),
+    q_conQuienHosp:Q('q_conQuienHosp','C',42,['¿Con quién se va a hospedar?','¿Va a compartir el hospedaje con alguien?'],['Who will you stay with?','Will you share your lodging with anyone?'],{n:2,busca:'Coherencia entre hospedaje y acompañantes.',tip:'Responde con la verdad y que cuadre con tus acompañantes de la DS-160.'}),
+    q_costoHotel:Q('q_costoHotel','C',43,['¿Cuánto paga por noche de hospedaje?','¿Cuánto le cuesta el hotel?'],['How much do you pay per night for lodging?','How much does the hotel cost?'],{n:3,espera:NUM,busca:'Que el costo sea razonable frente a tus ingresos.',tip:'Una cifra aproximada y real. Si no lo sabes aún, dilo con naturalidad.'}),
+    // ===== D. Acompañantes =====
+    q_acompanante:Q('q_acompanante','D',50,['¿Viaja solo o con alguien?','¿Alguien viaja con usted?','¿Va acompañado?'],['Are you traveling alone or with someone?','Is anyone traveling with you?','Are you traveling with someone?'],{verifica:'acompanante',busca:'Quién viaja y que cuadre con quién paga y dónde se hospeda.',tip:'Si viajas acompañado, di nombre y relación; igual que en tu DS-160.',
       seg:[{re:/amig|compan|con mi|primo|prima|hermano|hermana|novi|espos|pareja|familia|colega|with my|friend/,not:/\b(solo|sola|alone)\b/,id:'s_acomp',es:'¿Quién es esa persona, a qué se dedica y cuál es su relación con usted?',en:'Who is that person, what do they do, and what is your relationship?',verifica:'acompanante'}]}),
-    q_trabajo:Q('q_trabajo','E',50,'¿Dónde trabaja y cuál es su puesto?','Where do you work and what is your position?',{verifica:'trabajo',busca:'Arraigo laboral verdadero y comprobable.',tip:'Empresa y puesto exactamente como en tu DS-160.',
+    q_quienViaja:Q('q_quienViaja','D',51,['¿Quién viaja con usted y qué relación tiene?','¿Con quién viaja y qué relación tiene con usted?'],['Who is traveling with you and what is your relationship?','Who are you traveling with and how are you related?'],{n:2,verifica:'acompanante',busca:'Que nombre y relación coincidan con la DS-160.',tip:'Nombre y relación igual que en tu DS-160. Si viajas solo(a), dilo.'}),
+    q_alguienTrabajo:Q('q_alguienTrabajo','D',52,['¿Viaja alguien de su trabajo o algún amigo?','¿Algún compañero de trabajo va al mismo viaje?'],['Is anyone from work or a friend traveling with you?','Is any coworker going on the same trip?'],{n:2,corta:true,espera:SEG_SINO,busca:'Coherencia con tus acompañantes.',tip:'Responde con la verdad y que coincida con tu DS-160.'}),
+    q_comoConocio:Q('q_comoConocio','D',53,['¿Cómo conoció a su acompañante?','¿Desde cuándo conoce a la persona con la que viaja?'],['How did you meet your travel companion?','How long have you known the person you are traveling with?'],{n:3,si:'acomp',busca:'Relación real y explicable.',tip:'Cuenta en una frase cómo y cuándo se conocieron, con la verdad.'}),
+    q_acompTrabajo:Q('q_acompTrabajo','D',54,['¿A qué se dedica su acompañante?','¿Su acompañante trabaja o estudia?'],['What does your travel companion do?','Does your companion work or study?'],{n:3,si:'acomp',busca:'Que conozcas a quien viaja contigo.',tip:'Di a qué se dedica, en una frase. Si no lo sabes con detalle, dilo con la verdad.'}),
+    q_acompVisa:Q('q_acompVisa','D',55,['¿Su acompañante ya tiene visa?','¿La persona que viaja con usted ya tiene su visa?'],['Does your companion already have a visa?','Does the person traveling with you already have a visa?'],{n:2,si:'acomp',corta:true,espera:SEG_SINO,busca:'Coherencia del grupo de viaje.',tip:'Responde lo que sabes, con la verdad.'}),
+    // ===== E. Trabajo =====
+    q_trabajo:Q('q_trabajo','E',60,['¿Dónde trabaja y cuál es su puesto?','¿Para quién trabaja y qué puesto tiene?','¿En qué empresa trabaja y qué hace ahí?'],['Where do you work and what is your position?','Who do you work for and what is your position?','Which company do you work for and what do you do there?'],{ob:true,verifica:'trabajo',busca:'Arraigo laboral verdadero y comprobable.',tip:'Empresa y puesto exactamente como en tu DS-160.',
       seg:[{re:/negocio propio|mi negocio|mi empresa|independiente|freelance|own business/,id:'s_negocio_propio',es:'¿Desde cuándo tiene su negocio y cuántas personas trabajan con usted?',en:'How long have you had your business and how many people work with you?'}]}),
-    q_desdecuando:Q('q_desdecuando','E',52,'¿Desde cuándo trabaja ahí?','How long have you worked there?',{verifica:'ingreso',busca:'Antigüedad igual a la DS-160.',tip:'Di el año (y mes si lo recuerdas) de tu ingreso. Conoce tus fechas; si hay un error en tu DS-160, corrígelo y dilo.'}),
-    q_funciones:Q('q_funciones','E',54,'¿Qué funciones tiene en su trabajo?','What are your duties?',{busca:'Que sepas explicar lo que haces.',tip:'Explica en 1 o 2 frases lo que haces, sin tecnicismos.'}),
-    q_permiso:Q('q_permiso','E',56,'¿Su trabajo aprobó el viaje? ¿Cuántos días de permiso tiene?','Did your employer approve the trip? How many days off do you have?',{busca:'Permiso real para viajar.',tip:'Solo di que tienes permiso si es verdad. Ten a la mano la constancia, pero no la entregues si no la piden.'}),
-    q_trabAnterior:Q('q_trabAnterior','E',58,'¿Trabajó en otro lugar antes? ¿Cuándo salió de ahí?','Did you work somewhere else before? When did you leave?',{verifica:'trabAnterior',busca:'Fechas de trabajo que cuadren sin empalmes.',tip:'Fechas exactas como en tu DS-160. Si tus fechas no cuadran por un error, corrígelo y dilo con la verdad.'}),
-    q_quienpaga:Q('q_quienpaga','F',60,'¿Quién paga su viaje?','Who is paying for your trip?',{verifica:'paga',busca:'Viaje pagable con recursos reales.',tip:'Di quién paga, igual que en tu DS-160.',
+    q_dedica:Q('q_dedica','E',61,['¿A qué se dedica?','¿Cuál es su ocupación?'],['What do you do for a living?','What is your occupation?'],{verifica:'trabajo',busca:'Ocupación clara.',tip:'Tu ocupación y empresa en una frase, como en tu DS-160.'}),
+    q_desdecuando:Q('q_desdecuando','E',62,['¿Desde cuándo trabaja ahí?','¿Cuánto tiempo lleva en su trabajo?','¿En qué fecha entró a su trabajo actual?'],['How long have you worked there?','How long have you been at your job?','When did you start your current job?'],{n:2,verifica:'ingreso',busca:'Antigüedad igual a la DS-160.',tip:'Di el año (y mes si lo recuerdas) de tu ingreso. Conoce tus fechas; si hay un error en tu DS-160, corrígelo y dilo.'}),
+    q_funciones:Q('q_funciones','E',63,['¿Qué funciones tiene en su trabajo?','¿Qué hace en un día normal de trabajo?'],['What are your duties?','What do you do on a normal workday?'],{n:2,busca:'Que sepas explicar lo que haces.',tip:'Explica en 1 o 2 frases lo que haces, sin tecnicismos.'}),
+    q_horario:Q('q_horario','E',64,['¿Cuál es su horario de trabajo?','¿Qué días trabaja?'],['What are your working hours?','Which days do you work?'],{n:2,busca:'Detalle real de tu empleo.',tip:'Di tu horario real en una frase.'}),
+    q_permiso:Q('q_permiso','E',65,['¿Su trabajo aprobó el viaje? ¿Cuántos días de permiso tiene?','¿Tiene permiso o vacaciones para este viaje?'],['Did your employer approve the trip? How many days off do you have?','Do you have leave or vacation for this trip?'],{n:2,busca:'Permiso real para viajar.',tip:'Solo di que tienes permiso si es verdad. Ten a la mano la constancia, pero no la entregues si no la piden.'}),
+    q_permanente:Q('q_permanente','E',66,['¿Su empleo es permanente o temporal?','¿Tiene contrato fijo o temporal?'],['Is your job permanent or temporary?','Do you have a permanent or a temporary contract?'],{n:2,espera:/perman|base|fijo|indefin|temporal|eventual|contrato|honorar|permanent|temporary|contract/,busca:'Estabilidad laboral.',tip:'Responde con la verdad sobre tu tipo de empleo.'}),
+    q_negocioPropio:Q('q_negocioPropio','E',67,['¿Tiene algún negocio propio?','¿Además de su trabajo, tiene un negocio?'],['Do you have your own business?','Besides your job, do you have a business?'],{n:2,corta:true,espera:SEG_SINO,busca:'Fuentes de ingreso y arraigo.',tip:'Responde con la verdad. Si tienes uno, di cuál en una frase.'}),
+    q_quienCubre:Q('q_quienCubre','E',68,['¿Quién hará su trabajo mientras está fuera?','¿Quién cubre sus funciones mientras viaja?'],['Who will do your work while you are away?','Who covers your duties while you travel?'],{n:3,busca:'Que tu ausencia esté planeada.',tip:'Di quién te cubre o cómo se organiza tu área, con la verdad.'}),
+    q_trabajoViaja:Q('q_trabajoViaja','E',69,['¿Qué pasa con su trabajo mientras viaja?','¿Su trabajo lo espera cuando regrese?'],['What happens with your job while you travel?','Will your job be waiting for you when you return?'],{n:3,busca:'Que tengas un empleo al que regresar.',tip:'Explica con hechos reales que regresas a tu trabajo (permiso, vacaciones aprobadas).'}),
+    q_reporta:Q('q_reporta','E',70,['¿A quién le reporta en su trabajo?','¿Quién es su jefe inmediato?'],['Who do you report to at work?','Who is your direct supervisor?'],{n:3,busca:'Detalle de un empleo real.',tip:'Di el puesto de tu jefe (no hace falta el nombre completo), con la verdad.'}),
+    q_trabAnterior:Q('q_trabAnterior','E',71,['¿Trabajó en otro lugar antes? ¿Cuándo salió de ahí?','¿Cuál fue su trabajo anterior y hasta cuándo estuvo?'],['Did you work somewhere else before? When did you leave?','What was your previous job and until when were you there?'],{n:2,verifica:'trabAnterior',busca:'Fechas de trabajo que cuadren sin empalmes.',tip:'Fechas exactas como en tu DS-160. Si tus fechas no cuadran por un error, corrígelo y dilo con la verdad.'}),
+    q_porqueCambio:Q('q_porqueCambio','E',72,['¿Por qué dejó su trabajo anterior?','¿Por qué cambió de empleo?'],['Why did you leave your previous job?','Why did you change jobs?'],{n:3,si:'trabAnt',busca:'Trayectoria laboral coherente.',tip:'Una razón verdadera y corta (mejor oferta, crecimiento).'}),
+    // ===== I. Estudios (bloque de trabajo) =====
+    q_estudios:Q('q_estudios','I',75,['¿Dónde estudió y qué título tiene?','¿Qué estudió?','¿Cuál es su último grado de estudios?'],['Where did you study and what degree do you have?','What did you study?','What is your highest level of education?'],{verifica:'estudios',busca:'Coherencia con el perfil.',tip:'Escuela y título tal como los declaraste.'}),
+    q_titulo:Q('q_titulo','I',76,['¿Qué título tiene?','¿Terminó su carrera?'],['What degree do you have?','Did you finish your degree?'],{n:2,verifica:'estudios',busca:'Coherencia con el perfil.',tip:'Tu título tal como en tu DS-160.'}),
+    q_estudiaAhora:Q('q_estudiaAhora','I',77,['¿Estudia actualmente?','¿Está estudiando algo en este momento?'],['Are you currently studying?','Are you studying anything right now?'],{corta:true,espera:SEG_SINO,busca:'Situación actual.',tip:'Responde sí o no con la verdad.'}),
+    q_planEstudiar:Q('q_planEstudiar','I',78,['¿Planea estudiar en Estados Unidos?','¿Va a tomar algún curso allá?'],['Do you plan to study in the United States?','Will you take any course there?'],{n:2,corta:true,espera:SEG_SINO,busca:'Que no planees estudiar con visa de turista.',tip:'Si tu plan es turismo, di "no" con claridad. Si quieres estudiar, esa no es la visa.'}),
+    q_relacionEstudios:Q('q_relacionEstudios','I',79,['¿Su carrera tiene relación con su trabajo actual?','¿Trabaja en lo que estudió?'],['Is your degree related to your current job?','Do you work in what you studied?'],{n:3,busca:'Trayectoria coherente.',tip:'Responde con la verdad en una frase.'}),
+    // ===== F. Dinero y quién paga =====
+    q_quienpaga:Q('q_quienpaga','F',80,['¿Quién paga su viaje?','¿Quién va a cubrir los gastos del viaje?','¿Con qué dinero va a viajar?'],['Who is paying for your trip?','Who will cover the trip expenses?','How are you paying for this trip?'],{ob:true,verifica:'paga',busca:'Viaje pagable con recursos reales.',tip:'Di quién paga, igual que en tu DS-160.',
       seg:[{re:/mi (tio|tia|madre|mama|padre|papa|hermano|hermana|primo|prima|familia|esposo|esposa|pareja)|amig|my (uncle|aunt|mother|father|family)|friend/,not:/\byo\b|mis ahorros|myself/,id:'s_patrocinador',es:'¿Y por qué esa persona paga su viaje? ¿A qué se dedica?',en:'And why is that person paying for your trip? What do they do?'}]}),
-    q_salario:Q('q_salario','F',62,'¿Cuánto gana al mes?','How much do you earn per month?',{verifica:'salario',espera:/\d|mil|peso|mxn|thousand/,busca:'Cifras que cuadren con el costo del viaje.',tip:'Di tu ingreso real mensual, igual que en tu DS-160.'}),
-    q_costo:Q('q_costo','F',64,'¿Cuánto cuesta su viaje en total y cómo lo va a pagar?','How much will the trip cost in total and how will you pay for it?',{busca:'Que el costo sea razonable frente a tus ingresos.',tip:'Da una cifra aproximada y la fuente real del dinero (ahorros, salario).'}),
-    q_ahorros:Q('q_ahorros','F',66,'¿Tiene ahorros?','Do you have savings?',{corta:true,espera:SEG_SINO,busca:'Solvencia real.',tip:'Responde con la verdad, sin inflar cifras. No entregues estados de cuenta si no los piden.'}),
-    q_estadoCivil:Q('q_estadoCivil','G',70,'¿Está casado o tiene pareja? ¿Tiene hijos?','Are you married or do you have a partner? Do you have children?',{verifica:'civil',busca:'Arraigo familiar.',tip:'Estado civil e hijos tal como en tu DS-160, en una frase.'}),
-    q_regresa:Q('q_regresa','G',72,'¿Qué lo hace regresar a México?','What will make you come back to Mexico?',{busca:'Razones concretas para volver.',tip:'Menciona razones reales y verificables: trabajo, familia, casa, proyectos. No inventes vínculos.'}),
-    q_noquedarse:Q('q_noquedarse','G',74,'¿Cómo sabemos que no se va a quedar?','How do we know you will not stay?',{busca:'Intención clara de regreso.',tip:'Responde con calma y con hechos: fecha de regreso, trabajo, familia. Sin ponerte a la defensiva.'}),
-    q_proyectos:Q('q_proyectos','G',76,'¿Qué planes tiene en México después del viaje?','What plans do you have in Mexico after the trip?',{busca:'Proyectos que te esperan.',tip:'Un plan real y concreto, en una o dos frases.'}),
-    q_famEUA:Q('q_famEUA','H',80,'¿Tiene familiares en Estados Unidos?','Do you have family in the United States?',{verifica:'famEUA',busca:'Si hay motivo para quedarse y el estatus de la familia.',tip:'Si tienes, dilo con naturalidad y que coincida con tu DS-160. Tener familia en EUA no es un delito.',
+    q_salario:Q('q_salario','F',81,['¿Cuánto gana al mes?','¿Cuál es su ingreso mensual?','¿Cuánto es su sueldo?'],['How much do you earn per month?','What is your monthly income?','What is your salary?'],{n:2,verifica:'salario',espera:/\d|mil|peso|mxn|thousand/,busca:'Cifras que cuadren con el costo del viaje.',tip:'Di tu ingreso real mensual, igual que en tu DS-160.'}),
+    q_costo:Q('q_costo','F',82,['¿Cuánto cuesta su viaje en total?','¿Cuánto calcula que va a gastar en todo el viaje?'],['How much will the trip cost in total?','How much do you expect to spend on the whole trip?'],{n:3,espera:NUM,busca:'Que el costo sea razonable frente a tus ingresos.',tip:'Da una cifra aproximada y la fuente real del dinero (ahorros, salario).'}),
+    q_pagaEstancia:Q('q_pagaEstancia','F',83,['¿Cómo va a pagar su estancia?','¿Cómo va a cubrir sus gastos allá?'],['How will you pay for your stay?','How will you cover your expenses there?'],{n:2,busca:'Fuente real del dinero.',tip:'Di de dónde sale el dinero (salario, ahorros), con la verdad.'}),
+    q_ahorros:Q('q_ahorros','F',84,['¿Tiene ahorros?','¿Cuenta con ahorros para este viaje?'],['Do you have savings?','Do you have savings for this trip?'],{corta:true,espera:SEG_SINO,busca:'Solvencia real.',tip:'Responde con la verdad, sin inflar cifras. No entregues estados de cuenta si no los piden.'}),
+    q_bienes:Q('q_bienes','F',85,['¿Tiene propiedades o bienes a su nombre?','¿Tiene casa, terreno o auto a su nombre?'],['Do you own property or assets?','Do you own a house, land or a car?'],{n:2,corta:true,espera:SEG_SINO,busca:'Arraigo económico.',tip:'Responde con la verdad. No tener propiedades no es malo.'}),
+    q_cuantoLleva:Q('q_cuantoLleva','F',86,['¿Cuánto dinero piensa llevar?','¿Con cuánto dinero va a viajar?'],['How much money will you carry?','How much money are you traveling with?'],{n:3,espera:NUM,busca:'Cifra razonable y verdadera.',tip:'Una cifra aproximada real, coherente con tu salario y tu plan.'}),
+    q_impuestos:Q('q_impuestos','F',87,['¿Paga impuestos en México?','¿Está dado de alta en el SAT?'],['Do you pay taxes in Mexico?','Are you registered with the tax authority?'],{n:2,corta:true,espera:SEG_SINO,busca:'Formalidad de tus ingresos.',tip:'Responde con la verdad.'}),
+    q_gastoDiario:Q('q_gastoDiario','F',88,['¿Cuánto piensa gastar al día?','¿Qué presupuesto diario tiene?'],['How much do you plan to spend per day?','What is your daily budget?'],{n:3,espera:NUM,busca:'Plan de gastos realista.',tip:'Una cifra aproximada y real. Si no la calculaste, dilo con naturalidad.'}),
+    q_comoPagaAlla:Q('q_comoPagaAlla','F',89,['¿Cómo va a pagar allá: con tarjeta o en efectivo?','¿Va a usar tarjeta o efectivo?'],['How will you pay there: card or cash?','Will you use a card or cash?'],{n:1,espera:/tarjet|efectiv|ambos|card|cash|both/,busca:'Plan de pago concreto.',tip:'Responde con la verdad en una frase.'}),
+    // ===== G. Familia y arraigo en México =====
+    q_estadoCivil:Q('q_estadoCivil','G',90,['¿Está casado o tiene pareja? ¿Tiene hijos?','¿Cuál es su estado civil? ¿Tiene hijos?'],['Are you married or do you have a partner? Do you have children?','What is your marital status? Do you have children?'],{verifica:'civil',busca:'Arraigo familiar.',tip:'Estado civil e hijos tal como en tu DS-160, en una frase.'}),
+    q_hijos:Q('q_hijos','G',91,['¿Tiene hijos?','¿Cuántos hijos tiene?'],['Do you have children?','How many children do you have?'],{verifica:'civil',busca:'Arraigo familiar.',tip:'Responde con la verdad, igual que en tu DS-160.'}),
+    q_conQuienVive:Q('q_conQuienVive','G',92,['¿Con quién vive?','¿Vive solo o con su familia?'],['Who do you live with?','Do you live alone or with your family?'],{busca:'Arraigo familiar.',tip:'Responde en una frase, con la verdad.'}),
+    q_vivienda:Q('q_vivienda','G',93,['¿Dónde vive? ¿Su casa es propia o rentada?','¿Renta o tiene casa propia?'],['Where do you live? Do you own or rent?','Do you rent or own your home?'],{n:2,busca:'Arraigo en México.',tip:'Responde con la verdad. Rentar no es malo.'}),
+    q_dependientes:Q('q_dependientes','G',94,['¿Alguien depende económicamente de usted?','¿Mantiene a alguien de su familia?'],['Does anyone depend on you financially?','Do you support anyone in your family?'],{n:2,busca:'Compromisos que te hacen volver.',tip:'Responde con la verdad. No inventes dependientes.'}),
+    q_padres:Q('q_padres','G',95,['¿Sus padres viven en México?','¿Dónde viven sus papás?'],['Do your parents live in Mexico?','Where do your parents live?'],{n:2,busca:'Arraigo familiar.',tip:'Responde con la verdad, igual que en tu DS-160.'}),
+    q_regresa:Q('q_regresa','G',96,['¿Qué lo hace regresar a México?','¿Qué lo obliga a volver?','¿Por qué va a regresar?'],['What will make you come back to Mexico?','What makes you return?','Why will you come back?'],{n:2,busca:'Razones concretas para volver.',tip:'Menciona razones reales y verificables: trabajo, familia, casa, proyectos. No inventes vínculos.'}),
+    q_proyectos:Q('q_proyectos','G',97,['¿Qué planes tiene en México después del viaje?','¿Qué tiene pendiente en México para cuando regrese?'],['What plans do you have in Mexico after the trip?','What do you have pending in Mexico when you return?'],{n:2,busca:'Proyectos que te esperan.',tip:'Un plan real y concreto, en una o dos frases.'}),
+    q_cuidaFamilia:Q('q_cuidaFamilia','G',98,['¿Quién cuidará su casa o a su familia mientras viaja?','¿Quién se queda a cargo de sus cosas en México?'],['Who will take care of your home or family while you travel?','Who stays in charge of your things in Mexico?'],{n:3,busca:'Que tu viaje esté organizado.',tip:'Responde con la verdad en una frase.'}),
+    q_noquedarse:Q('q_noquedarse','G',99,['¿Cómo sabemos que no se va a quedar?','¿Por qué debería creer que va a regresar?'],['How do we know you will not stay?','Why should I believe you will come back?'],{n:3,busca:'Intención clara de regreso.',tip:'Responde con calma y con hechos: fecha de regreso, trabajo, familia. Sin ponerte a la defensiva.'}),
+    q_trabajarEUA:Q('q_trabajarEUA','G',100,['¿Piensa trabajar en Estados Unidos durante su viaje?','¿Le han ofrecido trabajo allá?'],['Do you plan to work in the United States during your trip?','Have you been offered a job there?'],{n:2,corta:true,espera:SEG_SINO,busca:'Que no planees trabajar con visa de turista.',tip:'Si tu plan es turismo, di "no" con claridad y con la verdad.'}),
+    // ===== H. Familia en EUA =====
+    q_famEUA:Q('q_famEUA','H',110,['¿Tiene familiares en Estados Unidos?','¿Tiene parientes que vivan allá?'],['Do you have family in the United States?','Do you have relatives who live there?'],{verifica:'famEUA',busca:'Si hay motivo para quedarse y el estatus de la familia.',tip:'Si tienes, dilo con naturalidad y que coincida con tu DS-160. Tener familia en EUA no es un delito.',
       seg:[{re:/\bsi\b|tia|tio|primo|prima|hermano|hermana|madre|padre|abuel|familia|yes|uncle|aunt|cousin/,not:/^no\b|no tengo|ninguno/,id:'s_estatus',es:'¿Qué estatus migratorio tiene esa persona y a qué se dedica?',en:'What is that person’s immigration status and what do they do?'}]}),
-    q_seQuedaCon:Q('q_seQuedaCon','H',84,'¿Se va a quedar con ellos?','Will you stay with them?',{corta:true,espera:SEG_SINO,busca:'Dónde te hospedas.',tip:'Responde con la verdad y que cuadre con el hospedaje de tu DS-160.'}),
-    q_estudios:Q('q_estudios','I',90,'¿Dónde estudió y qué título tiene?','Where did you study and what degree do you have?',{verifica:'estudios',busca:'Coherencia con el perfil.',tip:'Escuela y título tal como los declaraste.'}),
-    q_planEstudiar:Q('q_planEstudiar','I',92,'¿Planea estudiar en Estados Unidos?','Do you plan to study in the United States?',{corta:true,espera:SEG_SINO,busca:'Que no planees estudiar con visa de turista.',tip:'Si tu plan es turismo, di "no" con claridad. Si quieres estudiar, esa no es la visa.'}),
-    q_viajesPrev:Q('q_viajesPrev','J',100,'¿Ha viajado antes a Estados Unidos o a otros países?','Have you traveled to the United States or other countries before?',{verifica:'viajes',busca:'Historial de cumplimiento.',tip:'Nunca haber viajado no es malo: responde "no" con naturalidad. Si has viajado, di dónde y cuándo.',
+    q_amigosEUA:Q('q_amigosEUA','H',111,['¿Conoce a alguien que viva en Estados Unidos?','¿Tiene amigos allá?'],['Do you know anyone who lives in the United States?','Do you have friends there?'],{n:2,corta:true,espera:SEG_SINO,busca:'Contactos en EUA.',tip:'Responde con la verdad; tener amigos allá no es malo.'}),
+    q_famDonde:Q('q_famDonde','H',112,['¿Dónde viven sus familiares en Estados Unidos y a qué se dedican?','¿En qué ciudad viven sus parientes?'],['Where do your relatives in the United States live and what do they do?','Which city do your relatives live in?'],{n:2,si:'familia',verifica:'famEUA',busca:'Coherencia con la DS-160.',tip:'Ciudad y ocupación, con la verdad y como en tu DS-160.'}),
+    q_famEstatus:Q('q_famEstatus','H',113,['¿Qué estatus migratorio tienen sus familiares?','¿Sus familiares son residentes o ciudadanos?'],['What is your relatives’ immigration status?','Are your relatives residents or citizens?'],{n:3,si:'familia',verifica:'famEUA',busca:'Estatus de la familia.',tip:'Di lo que sabes, con la verdad. Si no lo sabes con certeza, dilo.'}),
+    q_famFrecuencia:Q('q_famFrecuencia','H',114,['¿Con qué frecuencia habla con ellos?','¿Cada cuándo los ve?'],['How often do you talk to them?','How often do you see them?'],{n:3,si:'familia',busca:'Relación real con la familia.',tip:'Responde con la verdad en una frase.'}),
+    q_seQuedaCon:Q('q_seQuedaCon','H',115,['¿Se va a quedar con ellos?','¿Va a dormir en casa de sus familiares?'],['Will you stay with them?','Will you sleep at your relatives’ house?'],{n:2,si:'familia',corta:true,espera:SEG_SINO,busca:'Dónde te hospedas.',tip:'Responde con la verdad y que cuadre con el hospedaje de tu DS-160.'}),
+    q_famPeticion:Q('q_famPeticion','H',116,['¿Alguien ha pedido una residencia para usted?','¿Algún familiar ha iniciado un trámite migratorio a su favor?'],['Has anyone filed a residency petition for you?','Has any relative started an immigration petition on your behalf?'],{n:3,corta:true,espera:SEG_SINO,busca:'Peticiones de inmigrante.',tip:'Responde con la verdad, igual que en tu DS-160.'}),
+    // ===== J. Viajes y visas anteriores =====
+    q_viajesPrev:Q('q_viajesPrev','J',120,['¿Ha viajado antes a Estados Unidos?','¿Ha estado antes en Estados Unidos?','¿Conoce Estados Unidos?'],['Have you been to the United States before?','Have you ever been in the United States?','Have you visited the United States before?'],{verifica:'viajes',busca:'Historial de cumplimiento.',tip:'Nunca haber viajado no es malo: responde "no" con naturalidad. Si has viajado, di dónde y cuándo.',
       seg:[{re:/\bsi\b|fui|estuve|he viajado|viaje a|yes|i went|i have/,not:/nunca|no he|primera vez|never/,id:'s_ultimo',es:'¿Cuándo fue su última visita y por qué viajó?',en:'When was your last visit and why did you travel?'}]}),
-    q_otrosPaises:Q('q_otrosPaises','J',102,'¿Va a visitar otros países en este viaje?','Will you visit other countries on this trip?',{corta:true,espera:SEG_SINO,busca:'Itinerario completo.',tip:'Responde con la verdad y que coincida con tu plan.'}),
-    q_negada:Q('q_negada','J',104,'¿Le han negado una visa alguna vez?','Have you ever been refused a visa?',{verifica:'negada',corta:true,espera:SEG_SINO,busca:'Negativas no declaradas.',tip:'Contesta con la verdad. Ocultar una negativa es mucho peor que haberla tenido.'}),
-    q_arrestado:Q('q_arrestado','K',110,'¿Ha sido arrestado o tiene procesos pendientes?','Have you ever been arrested or do you have pending cases?',{corta:true,espera:SEG_SINO,busca:'Antecedentes.',tip:'Responde con la verdad y coherente con tu DS-160. Si hay un "sí", explícalo corto y sin minimizar.'}),
-    q_redes:Q('q_redes','L',120,'¿Qué redes sociales usa?','Which social media do you use?',{verifica:'redes',busca:'Coherencia entre lo publicado y lo declarado.',tip:'Nombra las mismas redes que declaraste en tu DS-160 (las usadas en los últimos 5 años). Omitir una puede tomarse como falsedad.'}),
-    // Preguntas trampa de coherencia: repiten un dato del perfil de otra forma
-    t_dias:Q('t_dias','M',900,'Disculpe, ¿cuántos días dijo que se quedaría?','Sorry, how many days did you say you would stay?',{verifica:'dias',trampa:true,refiere:'q_tiempo',base:'q_tiempo',busca:'Que repitas el mismo dato sin cambiarlo.',tip:'Repite el mismo número: es un dato que conoces porque es verdad.'}),
-    t_puesto:Q('t_puesto','M',901,'Confírmeme el nombre de su empresa y su puesto.','Please confirm the name of your employer and your position.',{verifica:'puesto',trampa:true,refiere:'q_trabajo',base:'q_trabajo',busca:'Mismo dato, dicho otra vez.',tip:'Los mismos datos de tu DS-160, sin cambios.'}),
-    t_paga:Q('t_paga','M',902,'Entonces, ¿quién dijo que paga el viaje?','So, who did you say is paying for the trip?',{verifica:'paga',trampa:true,refiere:'q_quienpaga',base:'q_quienpaga',busca:'Que quien paga no cambie.',tip:'Misma respuesta que antes: es la verdad y está en tu DS-160.'}),
-    t_ingreso:Q('t_ingreso','M',903,'¿En qué año empezó a trabajar en su empresa actual?','In what year did you start working at your current employer?',{verifica:'ingreso',trampa:true,refiere:'q_desdecuando',base:'q_desdecuando',busca:'Fechas de trabajo que cuadren.',tip:'Di el año real. Si tu DS-160 tiene un error de fechas, corrígelo antes de la cita y dilo.'}),
+    q_otrosPaisesAntes:Q('q_otrosPaisesAntes','J',121,['¿Ha viajado a otros países?','¿Qué otros países conoce?'],['Have you traveled to other countries?','Which other countries have you visited?'],{n:2,busca:'Historial de viajes.',tip:'Nombra los países reales; si no has viajado, dilo con naturalidad.'}),
+    q_visaAntes:Q('q_visaAntes','J',122,['¿Ha tenido visa de Estados Unidos antes?','¿Tuvo alguna visa americana anteriormente?'],['Have you ever had a U.S. visa?','Did you have an American visa before?'],{n:2,corta:true,espera:SEG_SINO,busca:'Historial de visas.',tip:'Responde con la verdad, igual que en tu DS-160.'}),
+    q_ultimaVisita:Q('q_ultimaVisita','J',123,['¿Cuándo fue su última visita a Estados Unidos y por qué?','¿Cuánto tiempo se quedó la última vez?'],['When was your last visit to the United States and why?','How long did you stay last time?'],{n:3,si:'viajes',verifica:'viajes',busca:'Que hayas cumplido tus estancias.',tip:'Fecha y motivo reales, como en tu DS-160.'}),
+    q_excedido:Q('q_excedido','J',124,['¿Se ha quedado más tiempo del permitido en algún país?','¿Alguna vez excedió el tiempo de su estancia?'],['Have you ever overstayed in any country?','Have you ever stayed longer than allowed?'],{n:3,corta:true,espera:SEG_SINO,busca:'Historial de cumplimiento.',tip:'Responde con la verdad.'}),
+    q_negada:Q('q_negada','J',125,['¿Le han negado una visa alguna vez?','¿Alguna vez le rechazaron una visa?'],['Have you ever been refused a visa?','Have you ever been denied a visa?'],{n:2,verifica:'negada',corta:true,espera:SEG_SINO,busca:'Negativas no declaradas.',tip:'Contesta con la verdad. Ocultar una negativa es mucho peor que haberla tenido.'}),
+    // ===== K. Historial legal =====
+    q_arrestado:Q('q_arrestado','K',130,['¿Ha sido arrestado o tiene procesos pendientes?','¿Ha tenido problemas con la ley?'],['Have you ever been arrested or do you have pending cases?','Have you ever had problems with the law?'],{n:2,corta:true,espera:SEG_SINO,busca:'Antecedentes.',tip:'Responde con la verdad y coherente con tu DS-160. Si hay un "sí", explícalo corto y sin minimizar.'}),
+    q_antecedentes:Q('q_antecedentes','K',131,['¿Tiene antecedentes penales?','¿Lo han condenado por algún delito?'],['Do you have a criminal record?','Have you ever been convicted of a crime?'],{corta:true,espera:SEG_SINO,busca:'Antecedentes.',tip:'Responde con la verdad, igual que en tu DS-160.'}),
+    q_deportado:Q('q_deportado','K',132,['¿Lo han deportado o le pidieron salir de algún país?','¿Alguna vez lo regresaron de una frontera?'],['Have you ever been deported or asked to leave a country?','Have you ever been turned back at a border?'],{n:2,corta:true,espera:SEG_SINO,busca:'Historial migratorio.',tip:'Responde con la verdad.'}),
+    q_pasaportePerdido:Q('q_pasaportePerdido','K',133,['¿Ha perdido o le robaron un pasaporte?','¿Le han robado su pasaporte alguna vez?'],['Has your passport ever been lost or stolen?','Has your passport ever been stolen?'],{n:2,corta:true,espera:SEG_SINO,busca:'Coherencia con la DS-160.',tip:'Responde con la verdad, igual que en tu DS-160.'}),
+    // ===== L. Redes sociales =====
+    q_redes:Q('q_redes','L',140,['¿Qué redes sociales usa?','¿Tiene Facebook, Instagram u otra red social?','¿En qué redes sociales tiene cuenta?'],['Which social media do you use?','Do you have Facebook, Instagram or any other social network?','Which social networks do you have an account on?'],{verifica:'redes',busca:'Coherencia entre lo publicado y lo declarado.',tip:'Nombra las mismas redes que declaraste en tu DS-160 (las usadas en los últimos 5 años). Omitir una puede tomarse como falsedad.'}),
+    q_publicado:Q('q_publicado','L',141,['¿Ha publicado algo sobre este viaje en redes?','¿Ha contado en redes que va a viajar?'],['Have you posted about this trip on social media?','Have you shared on social media that you are traveling?'],{n:2,corta:true,espera:SEG_SINO,busca:'Coherencia entre lo publicado y lo que dices.',tip:'Responde con la verdad. Lo que publicas debe coincidir con tu propósito.'}),
+    q_perfilNombre:Q('q_perfilNombre','L',142,['¿Sus perfiles en redes están con su nombre real?','¿Usa algún perfil con otro nombre?'],['Are your social media profiles under your real name?','Do you use any profile under another name?'],{n:3,busca:'Perfiles declarados completos.',tip:'Responde con la verdad; todas las redes de los últimos 5 años van en tu DS-160.'}),
+    // ===== N. Seguridad (DS-160) =====
+    q_drogas:Q('q_drogas','N',150,['¿Ha consumido drogas ilegales?','¿Es o ha sido consumidor de drogas?'],['Have you ever used illegal drugs?','Are you or have you ever been a drug user?'],{corta:true,espera:SEG_SINO,busca:'Verificación de seguridad.',tip:'Responde con la verdad, igual que en tu DS-160.'}),
+    q_fraude:Q('q_fraude','N',151,['¿Ha intentado obtener una visa con datos falsos?','¿Alguien le ayudó a llenar su solicitud con información falsa?'],['Have you ever tried to obtain a visa with false information?','Did anyone help you fill out your application with false information?'],{n:2,corta:true,espera:SEG_SINO,busca:'Verificación de seguridad.',tip:'Responde con la verdad. Si alguien te ayudó a llenar la DS-160, eso no es malo; lo importante es que todo sea verdad.'}),
+    q_enfermedad:Q('q_enfermedad','N',152,['¿Tiene alguna enfermedad contagiosa importante?','¿Tiene alguna condición de salud que debamos saber?'],['Do you have any serious communicable disease?','Do you have any health condition we should know about?'],{corta:true,espera:SEG_SINO,busca:'Verificación de seguridad.',tip:'Responde con la verdad, igual que en tu DS-160.'}),
+    q_votado:Q('q_votado','N',153,['¿Ha votado alguna vez en Estados Unidos?','¿Ha participado en elecciones de Estados Unidos?'],['Have you ever voted in the United States?','Have you ever participated in U.S. elections?'],{n:2,corta:true,espera:SEG_SINO,busca:'Verificación de seguridad.',tip:'Responde con la verdad.'}),
+    // ===== M. Preguntas trampa y de coherencia (se insertan después de su pregunta base) =====
+    t_dias:Q('t_dias','M',900,['Disculpe, ¿cuántos días dijo que se quedaría?','Recuérdeme, ¿cuántos días va a estar allá?'],['Sorry, how many days did you say you would stay?','Remind me, how many days will you be there?'],{n:3,verifica:'dias',trampa:true,refiere:'q_tiempo',base:'q_tiempo',busca:'Que repitas el mismo dato sin cambiarlo.',tip:'Repite el mismo número: es un dato que conoces porque es verdad.'}),
+    t_puesto:Q('t_puesto','M',901,['Confírmeme el nombre de su empresa y su puesto.','Otra vez, ¿dónde trabaja y qué puesto tiene?'],['Please confirm the name of your employer and your position.','Once again, where do you work and what is your position?'],{n:3,verifica:'puesto',trampa:true,refiere:'q_trabajo',base:'q_trabajo',busca:'Mismo dato, dicho otra vez.',tip:'Los mismos datos de tu DS-160, sin cambios.'}),
+    t_paga:Q('t_paga','M',902,['Entonces, ¿quién dijo que paga el viaje?','Perdón, ¿quién paga todo esto?'],['So, who did you say is paying for the trip?','Sorry, who is paying for all this?'],{n:3,verifica:'paga',trampa:true,refiere:'q_quienpaga',base:'q_quienpaga',busca:'Que quien paga no cambie.',tip:'Misma respuesta que antes: es la verdad y está en tu DS-160.'}),
+    t_ingreso:Q('t_ingreso','M',903,['¿En qué año empezó a trabajar en su empresa actual?','¿Desde qué año está en ese trabajo?'],['In what year did you start working at your current employer?','Since what year have you been at that job?'],{n:3,verifica:'ingreso',trampa:true,refiere:'q_desdecuando',base:'q_desdecuando',busca:'Fechas de trabajo que cuadren.',tip:'Di el año real. Si tu DS-160 tiene un error de fechas, corrígelo antes de la cita y dilo.'}),
+    t_ciudad:Q('t_ciudad','M',904,['¿A qué ciudad me dijo que va?','Recuérdeme el destino de su viaje.'],['Which city did you say you are going to?','Remind me of your destination.'],{n:3,verifica:'ciudad',trampa:true,base:'q_lugares',busca:'Mismo destino que antes y que la DS-160.',tip:'El mismo destino de tu DS-160.'}),
+    t_hospedaje:Q('t_hospedaje','M',905,['¿Dónde me dijo que se va a quedar?','Repítame dónde se hospeda.'],['Where did you say you will stay?','Tell me again where you are staying.'],{n:3,verifica:'hospedaje',trampa:true,base:'q_hospedaje',busca:'Mismo hospedaje que antes.',tip:'El mismo hospedaje de tu DS-160.'}),
+    t_salario:Q('t_salario','M',906,['¿Cuánto me dijo que gana al mes?','Repítame su ingreso mensual.'],['How much did you say you earn per month?','Tell me your monthly income again.'],{n:3,verifica:'salario',trampa:true,base:'q_salario',busca:'Misma cifra que antes.',tip:'La misma cifra real de tu DS-160.'}),
+    t_acomp:Q('t_acomp','M',907,['Entonces, ¿con quién viaja?','Perdón, ¿viaja solo o acompañado?'],['So, who are you traveling with?','Sorry, are you traveling alone or with someone?'],{n:3,verifica:'acompanante',trampa:true,base:'q_acompanante',busca:'Mismo dato de acompañantes.',tip:'La misma respuesta que antes, como en tu DS-160.'}),
+    t_viajes:Q('t_viajes','M',908,['¿Qué puso en su solicitud sobre viajes anteriores?','Recuérdeme, ¿ha estado antes en Estados Unidos?'],['What did you write in your application about previous trips?','Remind me, have you been to the United States before?'],{n:3,verifica:'viajes',trampa:true,base:'q_viajesPrev',busca:'Coherencia con la DS-160.',tip:'Lo mismo que declaraste en tu DS-160.'}),
+    t_regreso:Q('t_regreso','M',909,['¿Qué día me dijo que regresa?','Recuérdeme su fecha de regreso.'],['What day did you say you are coming back?','Remind me of your return date.'],{n:3,verifica:'regreso',trampa:true,base:'q_tiempo',busca:'Misma fecha de regreso.',tip:'La fecha real: llegada más los días de tu DS-160.'}),
     // Seguimiento genérico cuando la respuesta es vaga
     s_vago:Q('s_vago','S',0,'Necesito una respuesta más concreta. ¿Puede decírmelo con sus palabras?','I need a more concrete answer. Can you tell me in your own words?',{seguimiento:true,tip:'Si no recuerdas un dato, es señal de que debes repasar tu DS-160 antes de la cita. Nunca inventes: di lo que sabes con claridad.'})
   };
@@ -586,7 +694,7 @@ const MotorConsul = (function(){
     m.solteroSinHijos=perfil.estadoCivil==='soltero'&&+perfil.hijos===0;
     m.sinViajes=!perfil.viajesPrev||/ning|nunca|^no\b|no he/.test(U.norm(perfil.viajesPrev));
     m.otroPaga=perfil.quienPaga!=='yo';
-    m.familiaEUA=!!perfil.familiaEUA.trim();
+    m.familiaEUA=!!(perfil.familiaEUA||'').trim();
     m.estanciaLarga=+perfil.dias>15;
     const costo=9000+(+perfil.dias||0)*2500; m.salarioBajo=+perfil.salario>0&&costo>3*+perfil.salario;
     const fin=U.parseDate(perfil.trabAntFin), ing=U.parseDate(perfil.ingresoActual); m.empalme=!!(fin&&ing&&fin>ing);
@@ -594,42 +702,108 @@ const MotorConsul = (function(){
     return m;
   }
 
-  function elegirPreguntas(perfil){
-    const m=marcas(perfil); const motivos=[]; const peso=[];
-    const core=['q_proposito','q_tiempo','q_trabajo','q_quienpaga','q_hospedaje'];
-    if(perfil.acompNombre) core.push('q_acompanante');
-    const extra=[];
-    function add(flag,txt,ids){ if(flag){ motivos.push(txt); ids.forEach(i=>extra.push(i)); peso.push(txt); } }
-    add(m.empalme,'Fechas de trabajo con empalme',['q_desdecuando','q_trabAnterior']);
-    add(m.familiaEUA,'Tienes familia en EUA',['q_famEUA','q_seQuedaCon']);
-    add(m.sinViajes,'Sin viajes previos',['q_viajesPrev','q_otrosPaises']);
-    add(m.solteroSinHijos,'Soltero(a) sin hijos: el oficial pregunta más por arraigo',['q_regresa','q_noquedarse','q_proyectos']);
-    add(m.otroPaga,'Otra persona paga el viaje',['q_costo','q_ahorros']);
-    add(m.estanciaLarga,'Estancia larga ('+perfil.dias+' días)',['q_regreso','q_boletos','q_porque_ahora']);
-    add(m.salarioBajo,'Salario bajo frente al costo de la estancia',['q_salario','q_costo','q_ahorros']);
-    add(m.visaNegada,'Visa negada antes',['q_negada']);
-    const fill=['q_salario','q_estudios','q_acompanante','q_regresa','q_viajesPrev','q_redes','q_planEstudiar','q_lugares','q_estadoCivil','q_funciones','q_permiso','q_arrestado'];
-    const prio=[]; core.concat(extra,fill).forEach(i=>{ if(prio.indexOf(i)<0) prio.push(i); });
-    const nBase=U.clamp(7+peso.length,7,12);
-    const base=prio.slice(0,nBase).sort((a,b)=>bancoPreguntas[a].orden-bancoPreguntas[b].orden);
-    // trampas
-    const cand=[]; if(m.empalme&&base.includes('q_desdecuando')) cand.push('t_ingreso');
-    ['t_dias','t_paga','t_puesto','t_ingreso'].forEach(t=>{ if(cand.indexOf(t)<0&&base.includes(bancoPreguntas[t].base)) cand.push(t); });
-    const nT=nBase>=10?2:1; const trampas=cand.slice(0,nT);
-    const lista=base.slice();
-    trampas.forEach((t,k)=>{ const bi=lista.indexOf(bancoPreguntas[t].base); const pos=k===0?Math.min(lista.length,bi+3):lista.length; lista.splice(pos,0,t); });
-    const cola=lista.map(id=>Object.assign({},bancoPreguntas[id]));
-    return {cola,motivos};
+  // ---------- Adaptación (local, sin IA externa) ----------
+  // opts: {hist:[puntajes de entrevistas], temas:{A:[puntajes...]}, recientes:[[ids],[ids],[ids]]}
+  const NIVELES={1:{nombre:'1 · básico',pesos:{1:.55,2:.45,3:0},trampas:1,rep:1,n:8},2:{nombre:'2 · intermedio',pesos:{1:.25,2:.45,3:.3},trampas:2,rep:2,n:9},3:{nombre:'3 · avanzado',pesos:{1:.05,2:.4,3:.55},trampas:3,rep:3,n:10}};
+  const prom=a=>a&&a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;
+  function planAdaptativo(opts){
+    opts=opts||{}; const ult=(opts.hist||[]).slice(-3); const p=prom(ult);
+    const nivel=p==null||p<70?1:p<=85?2:3;
+    const temas=opts.temas||{}; const lista=Object.keys(temas).filter(t=>TEMAS[t]&&t!=='M'&&temas[t]&&temas[t].length).map(t=>({tema:t,nombre:TEMAS[t],prom:prom(temas[t].slice(-10)),n:temas[t].length})).sort((a,b)=>a.prom-b.prom);
+    const debiles=lista.filter(x=>x.prom<80).slice(0,3);
+    return {nivel,promedio:p,cfg:NIVELES[nivel],debiles,todos:lista};
+  }
+  function actualizarTemas(temas,items){
+    const t=Object.assign({},temas||{});
+    items.forEach(it=>{ const k=it.q&&it.q.tema; if(!k||!TEMAS[k]) return; const a=(t[k]||[]).slice(); a.push(it.ev.puntaje); t[k]=a.slice(-10); });
+    return t;
+  }
+  function elegible(q,perfil,m){
+    if(!q||q.seguimiento||q.trampa) return false;
+    if(q.si==='acomp') return !!(perfil.acompNombre||'').trim();
+    if(q.si==='familia') return m.familiaEUA;
+    if(q.si==='viajes') return !m.sinViajes;
+    if(q.si==='trabAnt') return !!(perfil.trabAntEmpresa||'').trim();
+    return true;
+  }
+  function barajar(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+  function variante(q){ const c=Object.assign({},q); const k=Math.floor(Math.random()*q.esAlt.length); c.es=q.esAlt[k]; c.en=q.enAlt[Math.min(k,q.enAlt.length-1)]; c.variante=k; return c; }
+
+  function elegirPreguntas(perfil,opts){
+    opts=opts||{}; const m=marcas(perfil); const motivos=[]; const plan=planAdaptativo(opts); const cfg=plan.cfg;
+    const recientes=new Set([].concat(...(opts.recientes||[]).slice(-3)));
+    const B=bancoPreguntas; const ids=Object.keys(B).filter(id=>elegible(B[id],perfil,m));
+    const elegidas=[];
+    // Preguntas que dicen casi lo mismo: solo una por entrevista (observación de El Contreras, 5-nov-2026)
+    const GRUPOS=[['q_primeraVez','q_visaAntes','q_negada']];
+    const ya=id=>elegidas.indexOf(id)>-1||GRUPOS.some(g=>g.indexOf(id)>-1&&g.some(o=>o!==id&&elegidas.indexOf(o)>-1));
+    const tomar=id=>{ if(id&&B[id]&&!ya(id)) elegidas.push(id); };
+    // Elige k preguntas de una lista de candidatos: primero las no recientes, ponderadas por el nivel del día
+    // Las preguntas de las últimas 3 entrevistas solo se repiten si no queda otra (permitir=true)
+    function sortear(cands,k,permitir){
+      cands=cands.filter(id=>!ya(id)&&B[id]); if(!cands.length||k<=0) return;
+      const nuevas=cands.filter(id=>!recientes.has(id));
+      if(nuevas.length>=k||!permitir) cands=nuevas; if(!cands.length) return;
+      const peso=id=>(cfg.pesos[B[id].n]||0.001)*(recientes.has(id)?0.03:1);
+      for(let r=0;r<k&&cands.length;r++){
+        const tot=cands.reduce((a,id)=>a+peso(id),0); let x=Math.random()*tot, pick=cands[0];
+        for(const id of cands){ x-=peso(id); if(x<=0){ pick=id; break; } }
+        tomar(pick); cands=cands.filter(id=>id!==pick);
+      }
+    }
+    const deTema=(...t)=>ids.filter(id=>t.indexOf(B[id].tema)>-1);
+    // 1. Obligatorias
+    ids.filter(id=>B[id].ob).forEach(tomar);
+    const maxBase=cfg.n+2; const cupo=k=>Math.max(0,Math.min(k,maxBase-elegidas.length));
+    // 2. Temas más débiles primero (aprende de tus respuestas)
+    plan.debiles.forEach((d,i)=>sortear(deTema(d.tema),cupo(i<2?2:1)));
+    // 3. Según el perfil (el motivo se queda; las preguntas varían)
+    function add(flag,txt,cands,k){ if(flag){ motivos.push(txt); sortear(cands.filter(id=>ids.indexOf(id)>-1),cupo(k)); } }
+    add(m.empalme,'Fechas de trabajo con empalme',['q_desdecuando','q_trabAnterior','q_porqueCambio'],2);
+    add(m.familiaEUA,'Tienes familia en EUA',deTema('H'),2);
+    add(m.sinViajes,'Sin viajes previos',['q_viajesPrev','q_otrosPaisesAntes','q_visaAntes','q_primeraVez'],1);
+    add(m.solteroSinHijos,'Soltero(a) sin hijos: el oficial pregunta más por arraigo',deTema('G'),2);
+    add(m.otroPaga,'Otra persona paga el viaje',['q_costo','q_ahorros','q_pagaEstancia','q_cuantoLleva'],1);
+    add(m.estanciaLarga,'Estancia larga ('+perfil.dias+' días)',['q_regreso','q_porqueFechaRegreso','q_porque_ahora','q_regresoATiempo'],2);
+    add(m.salarioBajo,'Salario bajo frente al costo de la estancia',['q_salario','q_costo','q_gastoDiario','q_ahorros'],2);
+    add(m.visaNegada,'Visa negada antes',['q_negada'],1);
+    // 4. Cobertura del flujo: al menos una por bloque, y relleno hasta el tamaño del nivel
+    const total=cfg.n+(motivos.length>2?1:0);
+    [['A'],['B','C','D'],['E','I'],['F'],['G','H'],['J','K','L','N']].forEach(bl=>{ if(!elegidas.some(id=>bl.indexOf(B[id].tema)>-1)) sortear(deTema(...bl),1,true); });
+    sortear(ids,total-elegidas.length,true);
+    // 5. Orden: apertura → viaje → trabajo → dinero → familia → cierre; aleatorio dentro de cada bloque (propósito primero)
+    const porBloque={}; barajar(elegidas).forEach(id=>{ const b=BLOQUE[B[id].tema]; (porBloque[b]=porBloque[b]||[]).push(id); });
+    if(porBloque[0]){ porBloque[0].sort((a,b)=>(b==='q_proposito')-(a==='q_proposito')); }
+    const lista=[]; Object.keys(porBloque).map(Number).sort((a,b)=>a-b).forEach(b=>porBloque[b].forEach(id=>lista.push(id)));
+    // 6. Trampas de coherencia según el nivel, después de su pregunta base
+    const cand=barajar(Object.keys(B).filter(id=>B[id].trampa&&lista.indexOf(B[id].base)>-1)).sort((a,b)=>recientes.has(a)-recientes.has(b));
+    if(m.empalme&&lista.indexOf('q_desdecuando')>-1&&cand.indexOf('t_ingreso')>0){ cand.splice(cand.indexOf('t_ingreso'),1); cand.unshift('t_ingreso'); }
+    cand.slice(0,cfg.trampas).forEach(t=>{ const bi=lista.indexOf(B[t].base); const pos=Math.min(lista.length,bi+3+Math.floor(Math.random()*2)); lista.splice(pos,0,t); });
+    const cola=lista.map(id=>variante(B[id]));
+    const pool=ids.filter(id=>lista.indexOf(id)<0);
+    return {cola,motivos,nivel:plan.nivel,nivelNombre:cfg.nombre,debiles:plan.debiles,maxRep:cfg.rep,pool,recientes:[...recientes]};
   }
 
   function siguientePregunta(estado,respuesta){
     const actual=estado.cola[estado.pos]; const tn=U.norm(respuesta||'');
-    if(actual&&!actual.seguimiento&&estado.cola.length<15&&estado.nSeg<4){
+    const maxLen=estado.maxLen||(estado.cola.length+5);
+    if(actual&&!actual.seguimiento&&estado.cola.length<maxLen&&estado.nSeg<4){
       let seg=null;
       const vago=PATRONES.slice(-1)[0].re.test(tn)||tn.split(' ').filter(Boolean).length<=1&&!actual.corta;
       if(vago&&estado.cola.filter(x=>x.id==='s_vago').length<1){ seg=Object.assign({},bancoPreguntas.s_vago,{verifica:actual.verifica,refiere:null}); }
       else if(actual.seg){ for(const s of actual.seg){ if(s.re.test(tn)&&!(s.not&&s.not.test(tn))){ seg=Q(s.id,actual.tema,actual.orden,s.es,s.en,{seguimiento:true,verifica:s.verifica,tip:actual.tip,busca:'Seguimiento sobre lo que acabas de decir.'}); break; } } }
-      if(seg){ estado.cola.splice(estado.pos+1,0,seg); estado.nSeg++; }
+      // Si contestó bien un tema, una repregunta de detalle de ese mismo tema (según el nivel del día)
+      if(!seg&&!actual.trampa&&estado.pool&&(estado.nRep||0)<(estado.maxRep||0)&&tn){
+        const ev=evaluarRespuesta(actual,respuesta,estado.perfil||{},{previas:{},segundos:0});
+        if(ev.puntaje>=80){
+          const usados=new Set(estado.cola.map(x=>x.id));
+          const rec=new Set(estado.recientes||[]);
+          let c=estado.pool.filter(id=>!usados.has(id)&&bancoPreguntas[id].tema===actual.tema&&bancoPreguntas[id].n>=2);
+          const nuevas=c.filter(id=>!rec.has(id)); if(nuevas.length) c=nuevas;
+          if(c.length){ const id=c[Math.floor(Math.random()*c.length)]; seg=Object.assign(variante(bancoPreguntas[id]),{repregunta:true}); estado.nRep=(estado.nRep||0)+1; }
+        }
+      }
+      if(seg){ estado.cola.splice(estado.pos+1,0,seg); if(!seg.repregunta) estado.nSeg++; }
     }
     estado.pos++;
     return estado.cola[estado.pos]||null;
@@ -702,7 +876,7 @@ const MotorConsul = (function(){
     return {items,puntaje,prob,nivel,alertas:todas,graves,dims,segundos:seg};
   }
 
-  return {bancoPreguntas,elegirPreguntas,siguientePregunta,evaluarRespuesta,evaluarSesion,_parse:{parseDias,parseMonto,parseAnios,detectarAlertas},_marcas:marcas};
+  return {bancoPreguntas,elegirPreguntas,siguientePregunta,evaluarRespuesta,evaluarSesion,planAdaptativo,actualizarTemas,TEMAS,_parse:{parseDias,parseMonto,parseAnios,detectarAlertas},_marcas:marcas};
 })();
 
 /* ======================================================================
@@ -796,7 +970,11 @@ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; let rec=null,
 /* ======================================================================
    ENTREVISTA
    ====================================================================== */
-let E=null; // estado: {perfil, cola, pos, nSeg, respuestas, inicio, lang, voz}
+let E=null; // estado: {perfil, cola, pos, nSeg, nRep, maxRep, pool, maxLen, respuestas, lang, voz}
+K.recientes='simvisa_recientes_v1'; K.temas='simvisa_temas_v1';
+const NIV_TXT={1:'1 de 3 (básico)',2:'2 de 3 (intermedio)',3:'3 de 3 (avanzado)'};
+// Lo que el simulador aprende de ti, guardado solo en este navegador
+function ctxAdaptativo(){ return {hist:U.store.get(K.hist,[]).map(e=>e.p), temas:U.store.get(K.temas,{}), recientes:U.store.get(K.recientes,[])}; }
 let timer=null, tInicio=0, ultimoResultado=null;
 function prepararIntro(){
   if(E) return; $('entIntro').classList.remove('hidden'); $('entEnCurso').classList.add('hidden');
@@ -804,6 +982,8 @@ function prepararIntro(){
   if(!SR) m.push('Tu navegador no soporta respuesta por voz (Web Speech API): contesta por texto. Chrome o Edge suelen soportarla.');
   $('msgVoz').textContent=m.join(' ');
   const p=leerPerfil(); const mt=MotorConsul._marcas(p); const lista=[]; if(p.empresa) { const el=MotorConsul.elegirPreguntas(p); el.motivos.forEach(x=>lista.push(x)); }
+  const pa=MotorConsul.planAdaptativo(ctxAdaptativo());
+  $('entNivel').textContent='Nivel de hoy: '+NIV_TXT[pa.nivel]+' · Temas a reforzar: '+(pa.debiles.length?pa.debiles.map(d=>d.nombre).join(', '):'aún no hay datos (se calculan con tus prácticas)');
   $('entMotivos').innerHTML=lista.length?'<strong>Se reforzarán estos temas según tu perfil:</strong><ul>'+lista.map(x=>'<li>'+U.esc(x)+'</li>').join('')+'</ul>':'';
 }
 function fmtT(s){ s=Math.floor(s); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
@@ -811,21 +991,23 @@ function empezarTimer(){ clearInterval(timer); tInicio=Date.now(); $('entTimer')
 function textoPregunta(q){ return q[E.lang]||q.es; }
 function mostrarPregunta(){
   const q=E.cola[E.pos]; const total=E.cola.length;
-  $('entProgreso').textContent=(E.lang==='en'?'Question ':'Pregunta ')+(E.pos+1)+(E.lang==='en'?' of ':' de ')+total+(E.pos+1<=total&&E.nSeg<4&&total<15?'+':'');
+  $('entProgreso').textContent=(E.lang==='en'?'Question ':'Pregunta ')+(E.pos+1)+(E.lang==='en'?' of ':' de ')+total+(total<E.maxLen?'+':'');
   $('entBarra').style.width=Math.round(E.pos/total*100)+'%';
-  $('entSegTag').innerHTML=q.seguimiento?'<span class="chip">Seguimiento</span>':q.trampa?'':'';
+  $('entSegTag').innerHTML=q.seguimiento?'<span class="chip">Seguimiento</span>':q.repregunta?'<span class="chip">Repregunta</span>':'';
   $('entPregunta').textContent=textoPregunta(q);
-  $('entRespuesta').value=''; $('entRespuesta').focus(); $('msgMic').classList.add('hidden');
+  // Sin focus automático: en el celular el teclado solo se abre cuando la persona toca el cuadro
+  $('entRespuesta').value=''; actualizarEnviar(); $('msgMic').classList.add('hidden');
   empezarTimer(); if(E.voz) Voz.hablar(textoPregunta(q),E.lang);
 }
 function comenzar(){
   const p=leerPerfil(); const v=validarPerfil(p); if(v.some(a=>a.nivel==='alta'&&/Faltan datos/.test(a.texto))){ irA('perfil'); pintarValidaciones(); return; }
-  const sel=MotorConsul.elegirPreguntas(p);
-  E={perfil:p,cola:sel.cola,pos:0,nSeg:0,respuestas:[],lang:$('selLang').value,voz:$('selVoz').value==='on'&&Voz.soporta};
+  const sel=MotorConsul.elegirPreguntas(p,ctxAdaptativo());
+  E={perfil:p,cola:sel.cola,pos:0,nSeg:0,nRep:0,maxRep:sel.maxRep,pool:sel.pool,recientes:sel.recientes,maxLen:sel.cola.length+3,nivel:sel.nivel,respuestas:[],lang:$('selLang').value,voz:$('selVoz').value==='on'&&Voz.soporta};
+  const rc=U.store.get(K.recientes,[]); rc.push(sel.cola.map(q=>q.id)); U.store.set(K.recientes,rc.slice(-3));
   $('entIntro').classList.add('hidden'); $('entEnCurso').classList.remove('hidden'); mostrarPregunta();
 }
 function enviar(){
-  if(!E) return; const txt=$('entRespuesta').value.trim(); if(grabando) pararMic();
+  if(!E) return; const txt=$('entRespuesta').value.trim(); if(!txt){ actualizarEnviar(); $('msgEnviar').classList.remove('hidden'); return; } if(grabando) pararMic();
   const seg=(Date.now()-tInicio)/1000; clearInterval(timer); Voz.callar();
   const q=E.cola[E.pos]; E.respuestas.push({q:q,texto:txt,segundos:Math.round(seg)});
   const sig=MotorConsul.siguientePregunta(E,txt);
@@ -836,25 +1018,32 @@ function terminar(){
   $('entEnCurso').classList.add('hidden'); $('entIntro').classList.remove('hidden');
   if(!resp.length){ prepararIntro(); return; }
   const r=MotorConsul.evaluarSesion(resp,perfil); ultimoResultado=r;
+  U.store.set(K.temas,MotorConsul.actualizarTemas(U.store.get(K.temas,{}),r.items));
+  const rc=U.store.get(K.recientes,[]); if(rc.length){ rc[rc.length-1]=resp.map(x=>x.q.id); U.store.set(K.recientes,rc); }
   const h=U.store.get(K.hist,[]); h.push({f:new Date().toISOString(),p:r.puntaje,prob:r.prob,n:resp.length,alertas:r.alertas.map(a=>a.texto)}); U.store.set(K.hist,h);
   pintarResultados(r); prepararIntro(); irA('resultados');
 }
 $('btnComenzar').addEventListener('click',comenzar);
 $('btnEnviar').addEventListener('click',enviar);
+function actualizarEnviar(){ const v=!!$('entRespuesta').value.trim(); $('btnEnviar').disabled=!v; if(v) $('msgEnviar').classList.add('hidden'); }
+$('entRespuesta').addEventListener('input',actualizarEnviar);
 $('entRespuesta').addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); enviar(); } });
 $('btnRepetir').addEventListener('click',()=>{ if(E){ if(Voz.soporta&&E.voz) Voz.hablar(textoPregunta(E.cola[E.pos]),E.lang); else { $('msgMic').textContent='La voz está desactivada o no disponible: lee la pregunta en pantalla.'; $('msgMic').classList.remove('hidden'); } } });
 $('btnAbandonar').addEventListener('click',()=>{ if(!E) return; if(E.respuestas.length>=3) terminar(); else { clearInterval(timer); Voz.callar(); E=null; prepararIntro(); $('entEnCurso').classList.add('hidden'); $('entIntro').classList.remove('hidden'); } });
-function pararMic(){ try{ if(rec) rec.stop(); }catch(e){} grabando=false; $('btnMic').textContent='Responder con voz'; }
+function micUI(estado){ const b=$('btnMic'); b.classList.toggle('grabando',estado==='escuchando'); b.classList.toggle('nodisp',estado==='nodisp'); b.setAttribute('aria-pressed',String(estado==='escuchando'));
+  $('micTxt').textContent=estado==='escuchando'?'Escuchando… toca para terminar':estado==='nodisp'?'Voz no disponible aquí: usa el micrófono de tu teclado':'Responder con voz'; }
+micUI(SR?'listo':'nodisp');
+function pararMic(){ try{ if(rec) rec.stop(); }catch(e){} grabando=false; micUI('listo'); actualizarEnviar(); }
 $('btnMic').addEventListener('click',()=>{
   const m=$('msgMic');
-  if(!SR){ m.textContent='Tu navegador no soporta respuesta por voz. Usa Chrome o Edge, o escribe tu respuesta.'; m.classList.remove('hidden'); return; }
+  if(!SR){ m.textContent='Este navegador no reconoce voz. Toca el cuadro de respuesta y usa el micrófono de tu teclado para dictar, o escribe tu respuesta.'; m.classList.remove('hidden'); return; }
   if(grabando){ pararMic(); return; }
   try{
     rec=new SR(); rec.lang=(E&&E.lang==='en')?'en-US':'es-MX'; rec.interimResults=true; rec.continuous=false;
-    const base=$('entRespuesta').value; rec.onresult=ev=>{ let t=''; for(let i=0;i<ev.results.length;i++) t+=ev.results[i][0].transcript; $('entRespuesta').value=(base?base+' ':'')+t; };
-    rec.onend=()=>{ grabando=false; $('btnMic').textContent='Responder con voz'; };
-    rec.onerror=ev=>{ grabando=false; $('btnMic').textContent='Responder con voz'; m.textContent='No se pudo usar el micrófono de la página. En el celular toca el micrófono de tu teclado para dictar la respuesta, o escríbela.'; m.classList.remove('hidden'); };
-    rec.start(); grabando=true; $('btnMic').textContent='Detener micrófono'; m.textContent='Escuchando... habla y luego revisa el texto antes de enviar.'; m.classList.remove('hidden');
+    const base=$('entRespuesta').value; rec.onresult=ev=>{ let t=''; for(let i=0;i<ev.results.length;i++) t+=ev.results[i][0].transcript; $('entRespuesta').value=(base?base+' ':'')+t; actualizarEnviar(); };
+    rec.onend=()=>{ grabando=false; micUI('listo'); actualizarEnviar(); };
+    rec.onerror=ev=>{ grabando=false; micUI('listo'); m.textContent='No se pudo usar el micrófono de la página. En el celular toca el micrófono de tu teclado para dictar la respuesta, o escríbela.'; m.classList.remove('hidden'); };
+    rec.start(); grabando=true; micUI('escuchando'); m.textContent='Habla y, al terminar, toca el botón. Revisa el texto antes de enviar.'; m.classList.remove('hidden');
   }catch(e){ m.textContent='No se pudo iniciar el micrófono. Escribe tu respuesta.'; m.classList.remove('hidden'); }
 });
 if(Voz.soporta&&speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=()=>{};
@@ -872,10 +1061,13 @@ function pintarResultados(r){
   h+='<p class="tip">'+r.items.length+' preguntas · tiempo total de respuesta '+fmtT(r.segundos)+'</p></div>';
   h+='<div class="card"><h3>Señales de alerta detectadas ('+r.alertas.length+')</h3>';
   h+=r.alertas.length?r.alertas.map(a=>'<div class="alert '+(a.grave?'alta':'media')+'">'+U.esc(a.texto)+'</div>').join(''):'<div class="alert ok">No se detectaron señales de alerta en tus respuestas.</div>';
-  h+='</div><h3>Detalle por pregunta</h3>';
+  h+='</div>';
+  const pa=MotorConsul.planAdaptativo(ctxAdaptativo()); const deb=pa.todos.slice(0,3);
+  if(deb.length){ h+='<div class="card" id="resDebiles"><h3>Tus temas más débiles</h3><p class="tip">Promedio de tus respuestas por tema (últimas 10 de cada tema). La próxima entrevista los prioriza. Nivel de la próxima: '+NIV_TXT[pa.nivel]+'.</p><ul>'+deb.map(d=>'<li><strong>'+U.esc(d.nombre)+':</strong> '+d.prom+' pts <span class="tip">('+d.n+' respuestas)</span></li>').join('')+'</ul><p class="tip">'+U.esc(TIP_VERDAD)+'</p></div>'; }
+  h+='<h3>Detalle por pregunta</h3>';
   r.items.forEach((it,i)=>{
     const ev=it.ev; h+='<div class="card"><div class="row" style="justify-content:space-between"><strong>'+(i+1)+'. '+U.esc(it.q.es)+'</strong><span class="chip">'+ev.puntaje+' pts</span></div>';
-    if(it.q.seguimiento) h+='<span class="chip">Seguimiento</span>'; if(it.q.trampa) h+='<span class="chip">Pregunta de coherencia</span>';
+    if(it.q.seguimiento) h+='<span class="chip">Seguimiento</span>'; if(it.q.repregunta) h+='<span class="chip">Repregunta de detalle</span>'; if(it.q.trampa) h+='<span class="chip">Pregunta de coherencia</span>';
     h+='<div class="tip">Qué busca el oficial: '+U.esc(it.q.busca||'')+'</div>';
     h+='<div class="ans">'+(it.texto?U.esc(it.texto):'(sin respuesta)')+'</div><div class="tip">Tiempo: '+fmtT(it.segundos)+' · '+ev.palabras+' palabras · '+ev.frases+' frases</div>';
     h+='<div class="metrics">'+metrica('Claridad',ev.claridad)+metrica('Brevedad',ev.brevedad)+metrica('Coherencia',ev.coherencia)+metrica('Seguridad',ev.seguridad)+'</div>';
@@ -911,8 +1103,8 @@ function accionesHist(confirmar){
     $('btnBorrarHist').onclick=()=>accionesHist(true);
     if(!U.store.get(K.hist,[]).length) $('btnBorrarHist').classList.add('hidden');
   } else {
-    a.innerHTML='<span>¿Seguro que quieres borrar todo el historial? No se puede deshacer.</span> <button class="btn danger" id="hSi" type="button">Sí, borrar</button> <button class="btn sec" id="hNo" type="button">Cancelar</button>';
-    $('hSi').onclick=()=>{ U.store.del(K.hist); pintarHistorial(); };
+    a.innerHTML='<span>¿Seguro que quieres borrar todo el historial? También se borra lo que el simulador aprendió de tus respuestas. No se puede deshacer.</span> <button class="btn danger" id="hSi" type="button">Sí, borrar</button> <button class="btn sec" id="hNo" type="button">Cancelar</button>';
+    $('hSi').onclick=()=>{ U.store.del(K.hist); U.store.del(K.temas); U.store.del(K.recientes); pintarHistorial(); };
     $('hNo').onclick=()=>accionesHist(false);
   }
 }

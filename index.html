@@ -126,7 +126,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.4 · 5-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.5 · 24-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
@@ -213,6 +213,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
     <div class="grid">
       <div><label for="selLang">Idioma del cónsul</label><select id="selLang"><option value="es">Español (México)</option><option value="en">English</option></select></div>
       <div><label for="selVoz">Voz del cónsul</label><select id="selVoz"><option value="on">Activada</option><option value="off">Solo texto</option></select></div>
+      <div><label for="selPausa">Pausa antes de cortar el micrófono</label><select id="selPausa"><option value="3">3 segundos</option><option value="5">5 segundos (recomendado)</option><option value="8">8 segundos</option><option value="0">Solo cuando yo toque Terminar</option></select></div>
     </div>
     <p class="tip" id="msgVoz"></p>
     <p id="entNivel" class="nivel-hoy"></p>
@@ -996,6 +997,7 @@ function mostrarPregunta(){
   $('entSegTag').innerHTML=q.seguimiento?'<span class="chip">Seguimiento</span>':q.repregunta?'<span class="chip">Repregunta</span>':'';
   $('entPregunta').textContent=textoPregunta(q);
   // Sin focus automático: en el celular el teclado solo se abre cuando la persona toca el cuadro
+  if(grabando||mic.quiere) cancelarMic();
   $('entRespuesta').value=''; actualizarEnviar(); $('msgMic').classList.add('hidden');
   empezarTimer(); if(E.voz) Voz.hablar(textoPregunta(q),E.lang);
 }
@@ -1014,7 +1016,7 @@ function enviar(){
   if(sig) mostrarPregunta(); else terminar();
 }
 function terminar(){
-  clearInterval(timer); Voz.callar(); const resp=E.respuestas; const perfil=E.perfil; E=null;
+  clearInterval(timer); Voz.callar(); cancelarMic(); const resp=E.respuestas; const perfil=E.perfil; E=null;
   $('entEnCurso').classList.add('hidden'); $('entIntro').classList.remove('hidden');
   if(!resp.length){ prepararIntro(); return; }
   const r=MotorConsul.evaluarSesion(resp,perfil); ultimoResultado=r;
@@ -1028,24 +1030,59 @@ $('btnEnviar').addEventListener('click',enviar);
 function actualizarEnviar(){ const v=!!$('entRespuesta').value.trim(); $('btnEnviar').disabled=!v; if(v) $('msgEnviar').classList.add('hidden'); }
 $('entRespuesta').addEventListener('input',actualizarEnviar);
 $('entRespuesta').addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); enviar(); } });
-$('btnRepetir').addEventListener('click',()=>{ if(E){ if(Voz.soporta&&E.voz) Voz.hablar(textoPregunta(E.cola[E.pos]),E.lang); else { $('msgMic').textContent='La voz está desactivada o no disponible: lee la pregunta en pantalla.'; $('msgMic').classList.remove('hidden'); } } });
-$('btnAbandonar').addEventListener('click',()=>{ if(!E) return; if(E.respuestas.length>=3) terminar(); else { clearInterval(timer); Voz.callar(); E=null; prepararIntro(); $('entEnCurso').classList.add('hidden'); $('entIntro').classList.remove('hidden'); } });
+$('btnRepetir').addEventListener('click',()=>{ if(E){ if(grabando) forzarCierreMic(); /* que la voz del cónsul no se escriba en la respuesta */ if(Voz.soporta&&E.voz) Voz.hablar(textoPregunta(E.cola[E.pos]),E.lang); else { $('msgMic').textContent='La voz está desactivada o no disponible: lee la pregunta en pantalla.'; $('msgMic').classList.remove('hidden'); } } });
+$('btnAbandonar').addEventListener('click',()=>{ if(!E) return; if(E.respuestas.length>=3) terminar(); else { clearInterval(timer); Voz.callar(); cancelarMic(); E=null; prepararIntro(); $('entEnCurso').classList.add('hidden'); $('entIntro').classList.remove('hidden'); } });
 function micUI(estado){ const b=$('btnMic'); b.classList.toggle('grabando',estado==='escuchando'); b.classList.toggle('nodisp',estado==='nodisp'); b.setAttribute('aria-pressed',String(estado==='escuchando'));
   $('micTxt').textContent=estado==='escuchando'?'Escuchando… toca para terminar':estado==='nodisp'?'Voz no disponible aquí: usa el micrófono de tu teclado':'Responder con voz'; }
 micUI(SR?'listo':'nodisp');
-function pararMic(){ try{ if(rec) rec.stop(); }catch(e){} grabando=false; micUI('listo'); actualizarEnviar(); }
+/* Micrófono v1.5 (24-nov-2026): el navegador corta el dictado en la primera pausa. Ahora la app vuelve a
+   encender el micrófono sola y solo lo cierra cuando pasan los segundos de silencio elegidos en
+   "Pausa antes de cortar" (o cuando la persona toca Terminar). El texto de cada tramo se va sumando. */
+const MIC_MANUAL_MAX=60; // en "Solo cuando yo toque Terminar", se cierra solo tras 60 s sin voz (por si se olvida)
+let mic={quiere:false,id:0,base:'',final:'',tramo:'',ultimaVoz:0,tick:null,reintentos:0};
+function pausaMic(){ const v=Number(($('selPausa')||{}).value); return isNaN(v)?5:v; }
+function limiteSilencio(){ const p=pausaMic(); return (p>0?p:MIC_MANUAL_MAX)*1000; }
+function juntarTxt(){ return [].slice.call(arguments).map(s=>(s||'').trim()).filter(Boolean).join(' '); }
+function pintarDictado(){ $('entRespuesta').value=juntarTxt(mic.base,mic.final,mic.tramo); actualizarEnviar(); }
+function avisoMic(){ const m=$('msgMic'); if(!grabando||!mic.quiere) return; /* no tapa un mensaje de error */ const p=pausaMic(); const callado=Date.now()-mic.ultimaVoz;
+  if(p>0&&callado>1500){ const r=Math.max(1,Math.ceil((p*1000-callado)/1000)); m.textContent='Sigo escuchando… si no hablas, el micrófono se cierra en '+r+' s.'; }
+  else m.textContent=p>0?'Habla con calma: puedes hacer pausas de hasta '+p+' s. Al terminar, toca el botón. Revisa el texto antes de enviar.':'Habla con calma: el micrófono sigue abierto hasta que toques el botón. Revisa el texto antes de enviar.';
+  m.classList.remove('hidden'); }
+function cerrarMicUI(){ clearInterval(mic.tick); mic.tick=null; grabando=false; micUI('listo'); actualizarEnviar(); const m=$('msgMic'); if(m.textContent.indexOf('Sigo escuchando')===0||m.textContent.indexOf('Habla con calma')===0) m.textContent='Micrófono cerrado. Revisa el texto y toca "Enviar respuesta", o toca "Responder con voz" para agregar más.'; }
+function encenderTramo(){
+  const id=mic.id; const r=new SR(); rec=r; r.lang=(E&&E.lang==='en')?'en-US':'es-MX'; r.interimResults=true; r.continuous=false;
+  r.onresult=ev=>{ if(id!==mic.id) return; let t=''; for(let i=0;i<ev.results.length;i++) t+=ev.results[i][0].transcript; mic.tramo=t; mic.ultimaVoz=Date.now(); mic.reintentos=0; pintarDictado(); };
+  r.onerror=ev=>{ if(id!==mic.id) return; const e=ev&&ev.error;
+    if(e==='no-speech'||e==='aborted') return; // silencio normal: onend decide si sigue
+    mic.quiere=false; const m=$('msgMic'); m.textContent=(e==='network')?'El reconocimiento de voz necesita internet en este celular. Conéctate, o toca el cuadro y usa el micrófono de tu teclado.':'No se pudo usar el micrófono de la página. En el celular toca el micrófono de tu teclado para dictar la respuesta, o escríbela.'; m.classList.remove('hidden'); vigilarCierre(); };
+  r.onend=()=>{ if(id!==mic.id) return; mic.final=juntarTxt(mic.final,mic.tramo); mic.tramo=''; pintarDictado();
+    mic.activo=false;
+    if(mic.quiere&&Date.now()-mic.ultimaVoz<limiteSilencio()&&mic.reintentos<20){ mic.reintentos++; setTimeout(()=>{ if(id!==mic.id) return; if(!mic.quiere){ cerrarMicUI(); return; } try{ encenderTramo(); }catch(e){ mic.quiere=false; cerrarMicUI(); } },120); }
+    else { mic.quiere=false; cerrarMicUI(); } };
+  r.start(); mic.activo=true;
+}
+// La persona toca "terminar": se guarda lo último que se alcanzó a oír
+// Cierre forzado que conserva lo dicho (si el navegador no avisa que ya terminó)
+function forzarCierreMic(){ mic.final=juntarTxt(mic.final,mic.tramo); mic.tramo=''; pintarDictado(); mic.quiere=false; mic.activo=false; mic.id++; try{ if(rec) rec.abort(); }catch(e){} rec=null; cerrarMicUI(); }
+function vigilarCierre(){ const id=mic.id; setTimeout(()=>{ if(id===mic.id&&grabando) forzarCierreMic(); },1500); }
+function terminarMic(){
+  if(!mic.quiere&&grabando){ forzarCierreMic(); return; } // segundo toque: cierra ya
+  mic.quiere=false; if(!mic.activo){ cerrarMicUI(); return; }
+  try{ rec.stop(); vigilarCierre(); }catch(e){ forzarCierreMic(); } }
+// Al enviar, abandonar o pasar de pregunta: se apaga sin escribir nada más en el cuadro
+function cancelarMic(){ mic.quiere=false; mic.activo=false; mic.id++; try{ if(rec) rec.abort(); }catch(e){} rec=null; clearInterval(mic.tick); mic.tick=null; grabando=false; micUI(SR?'listo':'nodisp'); }
+function pararMic(){ cancelarMic(); actualizarEnviar(); }
 $('btnMic').addEventListener('click',()=>{
   const m=$('msgMic');
   if(!SR){ m.textContent='Este navegador no reconoce voz. Toca el cuadro de respuesta y usa el micrófono de tu teclado para dictar, o escribe tu respuesta.'; m.classList.remove('hidden'); return; }
-  if(grabando){ pararMic(); return; }
+  if(grabando){ terminarMic(); return; }
   try{
-    rec=new SR(); rec.lang=(E&&E.lang==='en')?'en-US':'es-MX'; rec.interimResults=true; rec.continuous=false;
-    const base=$('entRespuesta').value; rec.onresult=ev=>{ let t=''; for(let i=0;i<ev.results.length;i++) t+=ev.results[i][0].transcript; $('entRespuesta').value=(base?base+' ':'')+t; actualizarEnviar(); };
-    rec.onend=()=>{ grabando=false; micUI('listo'); actualizarEnviar(); };
-    rec.onerror=ev=>{ grabando=false; micUI('listo'); m.textContent='No se pudo usar el micrófono de la página. En el celular toca el micrófono de tu teclado para dictar la respuesta, o escríbela.'; m.classList.remove('hidden'); };
-    rec.start(); grabando=true; micUI('escuchando'); m.textContent='Habla y, al terminar, toca el botón. Revisa el texto antes de enviar.'; m.classList.remove('hidden');
-  }catch(e){ m.textContent='No se pudo iniciar el micrófono. Escribe tu respuesta.'; m.classList.remove('hidden'); }
+    Voz.callar(); mic.id++; mic.quiere=true; mic.base=$('entRespuesta').value; mic.final=''; mic.tramo=''; mic.ultimaVoz=Date.now(); mic.reintentos=0;
+    encenderTramo(); grabando=true; micUI('escuchando'); avisoMic();
+    clearInterval(mic.tick); mic.tick=setInterval(()=>{ if(!grabando) return; if(mic.quiere&&Date.now()-mic.ultimaVoz>=limiteSilencio()){ terminarMic(); return; } avisoMic(); },250);
+  }catch(e){ cancelarMic(); m.textContent='No se pudo iniciar el micrófono. Escribe tu respuesta.'; m.classList.remove('hidden'); }
 });
+$('selPausa').addEventListener('change',()=>{ const pr=U.store.get(K.prefs,{}); pr.pausaMic=$('selPausa').value; U.store.set(K.prefs,pr); });
 if(Voz.soporta&&speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=()=>{};
 
 /* ======================================================================
@@ -1471,6 +1508,7 @@ $('formPerfil').addEventListener('submit',e=>e.preventDefault());
 $('btnIrEntrevista').addEventListener('click',()=>{ pintarValidaciones(); irA('entrevista'); });
 (function init(){
   const pr=U.store.get(K.prefs,{}); aplicarTema(pr.tema||null);
+  $('selPausa').value=['3','5','8','0'].indexOf(pr.pausaMic)>=0?pr.pausaMic:'5'; // 5 s si no ha elegido
   const p=U.store.get(K.perfil,null); if(p) escribirPerfil(p);
   pintarValidaciones();
 })();

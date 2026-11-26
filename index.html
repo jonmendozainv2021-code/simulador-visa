@@ -605,7 +605,7 @@ const MotorConsul = (function(){
       const NEG='\\b(?:no|todavia no|aun no|sin|ni|not yet|not|haven.?t|no he|no hemos|tampoco)';
       const DESP='\\b(?:todavia no|aun no|no|cuando tenga|cuando me den|despues|not yet|once i get|after|tampoco)\\b';
       const menc=(X,c)=>new RegExp('\\b'+X+'\\b').test(c);
-      // las palabras de en medio no pueden ser del otro tema ("hospedaje en Samesun vuelos todavía no": el "no" es de los vuelos)
+      // las palabras de en medio no pueden ser del otro tema ("el hospedaje ya está vuelos todavía no": el "no" es de los vuelos)
       const OTRO=X=>'(?:(?!'+(X===V?H:V)+'\\b)\\w+\\s+)';
       const neg=(X,c)=>new RegExp(NEG+'\\s+'+OTRO(X)+'{0,3}'+X+'\\b|\\b'+X+'\\s+'+OTRO(X)+'{0,3}'+DESP).test(c);
       // v1.7 (revisión de El Contreras, 26-nov-2026): se revisa frase por frase; "vuelos, no" se une a su frase

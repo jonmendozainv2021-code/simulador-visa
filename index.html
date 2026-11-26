@@ -126,7 +126,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.6 · 25-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.7 · 26-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
@@ -144,6 +144,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 
 <!-- ============ PERFIL ============ -->
 <section class="panel on" id="tab-perfil">
+  <div class="card hidden" id="confViaje" aria-live="polite"></div>
   <div class="card">
     <h2>Tu perfil DS-160</h2>
     <p class="tip">Captura lo mismo que declaraste en tu DS-160. El simulador compara tus respuestas contra estos datos. Se guarda solo en este navegador. Usa datos ficticios si solo quieres probar.</p>
@@ -189,6 +190,13 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
     <div><label for="redFacebook">Facebook (usuario o nombre del perfil) <span class="h">Vacío si no la declaraste en tu DS-160</span></label><input id="redFacebook" type="text"></div>
     <div><label for="redInstagram">Instagram (usuario) <span class="h">Vacío si no la declaraste en tu DS-160</span></label><input id="redInstagram" type="text"></div>
     <div><label for="redOtras">Otras redes (opcional) <span class="h">Ej. TikTok, X, LinkedIn. Vacío si no declaraste otras</span></label><input id="redOtras" type="text"></div>
+  </div></fieldset>
+  <fieldset><legend>Plan del viaje</legend><p class="tip">Opcional, de tu itinerario: el simulador compara lugares, costos y reservaciones.</p><div class="grid">
+    <div><label for="lugares">Lugares y actividades <span class="h">Ej. la playa, un parque de diversiones, un museo</span></label><input id="lugares" type="text"></div>
+    <div><label for="costoNoche">Hospedaje por noche (USD) <span class="h">El cuarto completo</span></label><input id="costoNoche" type="number" min="0"></div>
+    <div><label for="costoTotal">Costo total de tu viaje (MXN) <span class="h">Tu parte, con vuelos</span></label><input id="costoTotal" type="number" min="0"></div>
+    <div><label for="gastoDiario">Gasto al día allá (USD) <span class="h">Tu parte</span></label><input id="gastoDiario" type="number" min="0"></div>
+    <div><label for="reservas">¿Qué tienes reservado hoy?</label><select id="reservas"><option value="">Sin dato</option><option value="nada">Nada todavía</option><option value="hotel">Solo el hospedaje</option><option value="vuelos">Solo los vuelos</option><option value="ambos">Hospedaje y vuelos</option></select></div>
   </div></fieldset>
   <fieldset><legend>Citas</legend><div class="grid">
     <div><label for="consulado">Consulado</label><select id="consulado"><option>Guadalajara</option><option>Ciudad de México</option><option>Monterrey</option><option>Tijuana</option><option>Ciudad Juárez</option><option>Hermosillo</option><option>Matamoros</option><option>Mérida</option><option>Nogales</option><option>Nuevo Laredo</option></select></div>
@@ -386,6 +394,23 @@ const MotorConsul = (function(){
     while((m=re.exec(t))){ let v=parseFloat(m[1]); if(m[2]) v*=1000; if(v>=100) out.push(v); }
     return out;
   }
+  // v1.7: cifras de dinero (también menores de 100) y la moneda que mencionó
+  const TC_APROX=19; // pesos por dólar, solo para comparar con holgura (±30 %)
+  function cifras(t){ t=U.norm(t).replace(/(\d)[,](\d{3})/g,'$1$2').replace(/(\d)[.](\d{3})(?!\d)/g,'$1$2');
+    const out=[]; const re=/(\d+(?:\.\d+)?)\s*(mil|k)?/g; let m; while((m=re.exec(t))){ let v=parseFloat(m[1]); if(m[2]) v*=1000; if(v>0) out.push(v); } return out; }
+  function montoPlan(tn,obj,moneda,lab,factores){
+    if(!obj) return null;
+    const usd=/dolar|dlls?|\busd\b|dollars?|bucks/.test(tn), mxn=/peso|\bmxn\b|\bmn\b/.test(tn);
+    const nums=cifras(tn); const fmt=v=>Math.round(v).toLocaleString('es-MX');
+    const dicho=moneda==='USD'?'USD '+fmt(obj):'MXN '+fmt(obj);
+    if(!nums.length) return {score:45,alertas:[],notas:['Da una cifra aproximada. Tu plan dice '+dicho+'.']};
+    let metas=factores.map(f=>obj*f);
+    if(moneda==='USD'&&mxn&&!usd) metas=metas.map(v=>v*TC_APROX); else if(moneda==='MXN'&&usd&&!mxn) metas=metas.map(v=>v/TC_APROX);
+    else if(!usd&&!mxn) metas=metas.concat(metas.map(v=>moneda==='USD'?v*TC_APROX:v/TC_APROX));
+    const ok=nums.some(x=>metas.some(m=>Math.abs(x-m)<=m*0.3));
+    if(ok) return {score:usd||mxn?100:90,alertas:[],notas:usd||mxn?[]:['Di la moneda: pesos o dólares.']};
+    return {score:30,alertas:['Cifra distinta a tu plan: para '+lab+' tu plan dice '+dicho+'.'],notas:[]};
+  }
   function parseAnios(t){ const out=[]; const re=/\b(19|20)\d{2}\b/g; let m; t=U.norm(t); while((m=re.exec(t))) out.push(+m[0]); return out; }
 
   // ---------- Alertas generales ----------
@@ -425,6 +450,8 @@ const MotorConsul = (function(){
   function detectarAlertas(tn,q){
     let limpio=neutralizarQuedar(tn.replace(NEGACION,' ').replace(NEG_VIVIR,' ')); const out=[];
     if(q&&q.permisoLargo) limpio=limpio.replace(RE_PERMISO,' ');
+    // v1.7: las cifras de dinero ("150 dólares al día") no son días de estancia (El Contreras, 26-nov-2026)
+    limpio=limpio.replace(/\b\d[\d.,]*\s*(?:mil\s+|k\s+)?(?:dolares?|dlls?|usd|pesos?|mxn|dollars?|bucks)\b/g,' ');
     PATRONES.forEach(p=>{ if(p.re.test(limpio)) out.push({texto:p.t,grave:p.g}); });
     const dias=parseDias(limpio);
     const largo=/(\d+|\w+)\s*(dias?|semanas?|meses|mes|days?|weeks?|months?)\b/.test(limpio) && dias.some(d=>d>90);
@@ -562,6 +589,57 @@ const MotorConsul = (function(){
       if(pn&&/\bno uso\b|ninguna|no tengo/.test(tn)) return {score:20,alertas:['Dijiste que no usas redes, pero tu perfil declara: '+p.redes+'.'],notas:[]};
       return menc.length?{score:100,alertas:[],notas:[]}:{score:65,alertas:[],notas:[]};
     },
+    // v1.7 (26-nov-2026): plan del viaje (lugares, costos y reservaciones). Si el campo está vacío, no se compara.
+    lugares(tn,p){ const c=CHK.ciudad(tn,p); const toks=U.tokens(String(p.lugares||'').replace(/,/g,' ')); if(!toks.length) return c;
+      const f=U.frac(tn,toks); if((f&&f>0)||(c&&c.score===100)) return {score:100,alertas:[],notas:[]};
+      return {score:50,alertas:[],notas:['Menciona la ciudad y los lugares de tu plan: '+p.lugares+'.']}; },
+    plan(tn,p){ const toks=U.tokens(String(p.lugares||'').replace(/,/g,' ')); if(!toks.length) return null;
+      const f=U.frac(tn,toks); return f&&f>0?{score:100,alertas:[],notas:[]}:{score:55,alertas:[],notas:['Menciona 2 o 3 lugares o actividades de tu plan: '+p.lugares+'.']}; },
+    // El hospedaje acepta la noche o la estancia completa (noches = días − 1), del cuarto o tu mitad; el costo total, tu parte o el de los dos si viajas acompañado (El Contreras, 26-nov-2026)
+    costoNoche(tn,p){ const n=Math.max(1,(+p.dias||1)-1); return montoPlan(tn,+p.costoNoche,'USD','el hospedaje por noche',[1,0.5,n,n/2]); },
+    costoTotal(tn,p){ return montoPlan(tn,+p.costoTotal,'MXN','el costo total de tu viaje',p.acompNombre||/los dos|entre (los|ambos)|ambos|both of us|the two of us/.test(tn)?[1,2]:[1]); },
+    gastoDiario(tn,p){ return montoPlan(tn,+p.gastoDiario,'USD','tu gasto al día',[1]); },
+    reservas(tn,p){
+      const r=p.reservas; if(!r) return null;
+      const V='(?:vuelos?|avion|boletos?|flights?|plane tickets?|tickets?)', H='(?:hotel|hospedaje|hostal|hostel|cuarto|habitacion|airbnb|lodging|room|accommodation)';
+      const NEG='\\b(?:no|todavia no|aun no|sin|ni|not yet|not|haven.?t|no he|no hemos|tampoco)';
+      const DESP='\\b(?:todavia no|aun no|no|cuando tenga|cuando me den|despues|not yet|once i get|after|tampoco)\\b';
+      const menc=(X,c)=>new RegExp('\\b'+X+'\\b').test(c);
+      // las palabras de en medio no pueden ser del otro tema ("hospedaje en Samesun vuelos todavía no": el "no" es de los vuelos)
+      const OTRO=X=>'(?:(?!'+(X===V?H:V)+'\\b)\\w+\\s+)';
+      const neg=(X,c)=>new RegExp(NEG+'\\s+'+OTRO(X)+'{0,3}'+X+'\\b|\\b'+X+'\\s+'+OTRO(X)+'{0,3}'+DESP).test(c);
+      // v1.7 (revisión de El Contreras, 26-nov-2026): se revisa frase por frase; "vuelos, no" se une a su frase
+      const fr=[]; tn.split(/[.,;:]|\bpero\b|\bbut\b|\by\b|\band\b/).map(x=>x.trim()).filter(Boolean).forEach(c=>{
+        if(fr.length&&/^(no|todavia no|aun no|no todavia|tampoco|not yet|no aun)$/.test(c)) fr[fr.length-1]+=' '+c; else fr.push(c); });
+      const estado=X=>{ const v=fr.filter(c=>menc(X,c)).map(c=>!neg(X,c)); if(!v.length) return null; if(v.every(x=>x)) return true; if(v.every(x=>!x)) return false; return 'mixto'; };
+      const dijoV=estado(V), dijoH=estado(H);
+      const tieneV=r==='vuelos'||r==='ambos', tieneH=r==='hotel'||r==='ambos';
+      const QUE={hotel:'el hospedaje sí, los vuelos todavía no',vuelos:'los vuelos sí, el hospedaje todavía no',ambos:'hospedaje y vuelos',nada:'nada todavía'}[r];
+      // Salida simple (ESTANDAR.md, 26-nov-2026: segundo rechazo de El Contreras). Solo alerta si afirmas algo que tu plan
+      // no tiene y la respuesta no trae ninguna negación; con negaciones nunca alerta: da 100 si coincide y si no, una nota.
+      const hayNeg=/\b(no|ni|sin|nada|todavia|aun|tampoco|not|nothing|haven.?t|hasta|cuando|despues|after|once)\b/.test(tn);
+      const afirma=/\b(si|yes)\b|ya (tengo|tenemos|reserve|reservamos|compre|compramos)|already/.test(tn);
+      if(!hayNeg){
+        const al=[];
+        if(menc(V,tn)&&!tieneV) al.push('Dijiste que ya tienes vuelos, pero en tu plan todavía no. Di solo lo que sea cierto hoy.');
+        if(menc(H,tn)&&!tieneH) al.push('Dijiste que ya tienes hospedaje, pero en tu plan todavía no.');
+        if(!menc(V,tn)&&!menc(H,tn)&&afirma&&r==='nada') al.push('Dijiste que sí, pero en tu plan no hay nada reservado todavía.');
+        if(al.length) return {score:20,alertas:al,notas:[]};
+      }
+      if(r==='nada') return hayNeg&&!afirma?{score:100,alertas:[],notas:[]}:{score:70,alertas:[],notas:['Di qué tienes reservado: '+QUE+'.']};
+      if(r==='ambos'&&!hayNeg&&(afirma||(menc(V,tn)&&menc(H,tn)))) return {score:100,alertas:[],notas:[]};
+      if(dijoV===tieneV&&dijoH===tieneH) return {score:100,alertas:[],notas:[]};
+      if(!hayNeg&&r!=='ambos'&&(tieneH?dijoH===true:dijoV===true)&&!menc(tieneH?V:H,tn)) return {score:85,alertas:[],notas:['Di también qué te falta: '+QUE+'.']};
+      return {score:70,alertas:[],notas:['Di qué tienes reservado: '+QUE+'.']};
+    },
+    boletos(tn,p){
+      const r=p.reservas; if(!r) return null; const tieneV=r==='vuelos'||r==='ambos';
+      const no=/\b(no|nada|not)\b|todavia|aun no|not yet|cuando tenga/.test(tn), si=/\b(si|yes)\b|ya (los |las )?(compre|compramos|tengo|tenemos)|already/.test(tn);
+      if(si&&!no&&!tieneV) return {score:20,alertas:['Dijiste que ya tienes los boletos, pero en tu plan todavía no. Di solo lo que sea cierto hoy.'],notas:[]};
+      if(no&&!si&&tieneV) return {score:20,alertas:['Dijiste que no tienes boletos, pero en tu plan ya están comprados.'],notas:[]};
+      if((si&&!no)||(no&&!si)) return {score:100,alertas:[],notas:[]};
+      return {score:70,alertas:[],notas:['Contesta sí o no: '+(tieneV?'ya los tienes.':'todavía no los compras.')]};
+    },
     estudios(tn,p){ const f=U.frac(tn,U.tokens(p.estudios)); if(f==null) return null; return f>0?{score:100,alertas:[],notas:[]}:{score:55,alertas:[],notas:['En tu perfil: '+p.estudios+'.']}; }
   };
 
@@ -586,15 +664,15 @@ const MotorConsul = (function(){
     q_tipoViaje:Q('q_tipoViaje','A',11,['¿Viaja por turismo, por negocios o por ambos?','¿Es un viaje de turismo o de negocios?'],['Are you traveling for tourism, business, or both?','Is this a tourism or a business trip?'],{espera:/turis|negoc|ambos|vacac|paseo|tourism|business|both|pleasure/,busca:'Que el tipo de viaje sea claro y coincida con la DS-160.',tip:'Una palabra basta: turismo, negocios o ambos. Lo mismo que en tu DS-160.'}),
     q_primeraVez:Q('q_primeraVez','A',13,['¿Es la primera vez que solicita una visa de Estados Unidos?','¿Ha solicitado esta visa antes?'],['Is this your first time applying for a U.S. visa?','Have you applied for this visa before?'],{corta:true,espera:SEG_SINO,busca:'Historial de solicitudes.',tip:'Contesta sí o no con la verdad. Si te la negaron antes, dilo: ocultarlo es peor.'}),
     q_porque_ahora:Q('q_porque_ahora','A',14,['¿Por qué quiere viajar ahora?','¿Por qué eligió estas fechas para viajar?','¿Por qué en este momento y no en otro?'],['Why do you want to travel now?','Why did you choose these dates?','Why now and not another time?'],{n:3,busca:'Una razón natural para esta fecha.',tip:'Una razón verdadera y simple (vacaciones aprobadas, fecha especial). No inventes urgencias.'}),
-    q_queHara:Q('q_queHara','A',15,['¿Qué va a hacer exactamente durante su visita?','Cuénteme qué planea hacer allá.','¿Qué actividades tiene planeadas?'],['What exactly will you do during your visit?','Tell me what you plan to do there.','What activities have you planned?'],{n:2,busca:'Plan concreto que suene a turismo o negocios.',tip:'Menciona 2 o 3 actividades reales de tu plan, en una o dos frases.'}),
+    q_queHara:Q('q_queHara','A',15,['¿Qué va a hacer exactamente durante su visita?','Cuénteme qué planea hacer allá.','¿Qué actividades tiene planeadas?'],['What exactly will you do during your visit?','Tell me what you plan to do there.','What activities have you planned?'],{n:2,verifica:'plan',busca:'Plan concreto que suene a turismo o negocios.',tip:'Menciona 2 o 3 actividades reales de tu plan, en una o dos frases.'}),
     q_porqueEUA:Q('q_porqueEUA','A',16,['¿Por qué eligió Estados Unidos y no otro país?','¿Por qué Estados Unidos para sus vacaciones?'],['Why did you choose the United States and not another country?','Why the United States for your vacation?'],{n:3,busca:'Una razón sencilla y creíble.',tip:'Una razón verdadera y concreta (un lugar que quieres conocer, un evento). Sin discursos.'}),
     q_porqueCiudad:Q('q_porqueCiudad','A',17,['¿Por qué eligió esa ciudad?','¿Por qué quiere visitar esa ciudad en particular?'],['Why did you choose that city?','Why do you want to visit that city in particular?'],{n:3,verifica:'ciudad',busca:'Que la ciudad coincida con la DS-160 y la razón sea creíble.',tip:'Nombra la misma ciudad de tu DS-160 y una razón real para ir.'}),
     // ===== B. Viaje e itinerario =====
-    q_lugares:Q('q_lugares','B',20,['¿A qué ciudades o lugares va a viajar?','¿Qué lugares va a visitar?','¿A qué ciudad va?'],['Which cities or places will you visit?','What places are you going to visit?','Which city are you going to?'],{verifica:'ciudad',busca:'Itinerario que suene a turismo.',tip:'Nombra los lugares de tu plan real, los mismos de tu DS-160.'}),
+    q_lugares:Q('q_lugares','B',20,['¿A qué ciudades o lugares va a viajar?','¿Qué lugares va a visitar?','¿A qué ciudad va?'],['Which cities or places will you visit?','What places are you going to visit?','Which city are you going to?'],{verifica:'lugares',busca:'Itinerario que suene a turismo.',tip:'Nombra los lugares de tu plan real, los mismos de tu DS-160.'}),
     q_tiempo:Q('q_tiempo','B',22,['¿Cuánto tiempo se va a quedar?','¿Cuántos días va a estar en Estados Unidos?','¿De cuánto tiempo es su viaje?'],['How long will you stay?','How many days will you be in the United States?','How long is your trip?'],{verifica:'dias',espera:/\d|dia|semana|mes|day|week|month|quincena|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce|catorce|quince|veinte/,busca:'Viaje corto y con regreso claro, igual que la DS-160.',tip:'Di el mismo número de días de tu DS-160. Tenlo claro.'}),
     q_fechaLlegada:Q('q_fechaLlegada','B',23,['¿En qué fecha piensa llegar a Estados Unidos?','¿Cuándo piensa viajar?'],['On what date do you plan to arrive in the United States?','When do you plan to travel?'],{n:2,espera:/\d|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|january|february|march|april|may|june|july|august|september|october|november|december/,busca:'Que la fecha coincida con la DS-160.',tip:'Di la fecha de llegada que declaraste en tu DS-160.'}),
-    q_boletos:Q('q_boletos','B',24,['¿Ya compró sus boletos de avión?','¿Ya tiene sus vuelos?'],['Have you bought your plane tickets?','Do you already have your flights?'],{corta:true,espera:SEG_SINO,busca:'Viaje planeado.',tip:'Contesta sí o no con la verdad. No es obligatorio comprar boletos antes de la entrevista; no compres de más por miedo.'}),
-    q_reservas:Q('q_reservas','B',25,['¿Ya reservó vuelos y hotel?','¿Tiene alguna reservación hecha?'],['Have you booked flights and a hotel?','Do you have any reservations?'],{n:2,corta:true,espera:SEG_SINO,busca:'Viaje planeado.',tip:'Responde con la verdad. Si no has reservado, dilo con calma: no es requisito.'}),
+    q_boletos:Q('q_boletos','B',24,['¿Ya compró sus boletos de avión?','¿Ya tiene sus vuelos?'],['Have you bought your plane tickets?','Do you already have your flights?'],{corta:true,espera:SEG_SINO,verifica:'boletos',busca:'Viaje planeado.',tip:'Contesta sí o no con la verdad. No es obligatorio comprar boletos antes de la entrevista; no compres de más por miedo.'}),
+    q_reservas:Q('q_reservas','B',25,['¿Ya reservó vuelos y hotel?','¿Tiene alguna reservación hecha?'],['Have you booked flights and a hotel?','Do you have any reservations?'],{n:2,corta:true,verifica:'reservas',espera:SEG_SINO,busca:'Viaje planeado.',tip:'Responde con la verdad. Si no has reservado, dilo con calma: no es requisito.'}),
     q_regreso:Q('q_regreso','B',26,['¿Cuándo planea regresar a México?','¿Qué día regresa?','¿Cuál es su fecha de regreso?'],['When do you plan to return to Mexico?','What day are you coming back?','What is your return date?'],{n:2,verifica:'regreso',busca:'Fecha de regreso clara.',tip:'Di la fecha de regreso que declaraste (llegada más días de estancia).'}),
     q_otrosPaises:Q('q_otrosPaises','B',27,['¿Va a visitar otros países en este viaje?','¿Además de Estados Unidos, va a otro país?'],['Will you visit other countries on this trip?','Besides the United States, are you going to another country?'],{corta:true,espera:SEG_SINO,busca:'Itinerario completo.',tip:'Responde con la verdad y que coincida con tu plan.'}),
     q_seguro:Q('q_seguro','B',28,['¿Tiene seguro de viaje?','¿Va a contratar un seguro de gastos médicos para el viaje?'],['Do you have travel insurance?','Will you get medical travel insurance?'],{n:2,corta:true,espera:SEG_SINO,busca:'Planeación del viaje.',tip:'Responde con la verdad. No es requisito para la visa.'}),
@@ -607,7 +685,7 @@ const MotorConsul = (function(){
       seg:[{re:/casa de|con mi|familiar|tia|tio|primo|amig|with my/,id:'s_dir',es:'¿Me puede dar la dirección?',en:'Can you give me the address?',verifica:'hospedaje'}]}),
     q_direccion:Q('q_direccion','C',41,['¿Me puede dar la dirección donde se va a quedar?','¿Cuál es la dirección de su hospedaje?'],['Can you give me the address where you will stay?','What is the address of your lodging?'],{n:2,verifica:'hospedaje',busca:'Que conozcas el dato y coincida con la DS-160.',tip:'La dirección o el nombre del lugar exactamente como en tu DS-160.'}),
     q_conQuienHosp:Q('q_conQuienHosp','C',42,['¿Con quién se va a hospedar?','¿Va a compartir el hospedaje con alguien?'],['Who will you stay with?','Will you share your lodging with anyone?'],{n:2,busca:'Coherencia entre hospedaje y acompañantes.',tip:'Responde con la verdad y que cuadre con tus acompañantes de la DS-160.'}),
-    q_costoHotel:Q('q_costoHotel','C',43,['¿Cuánto paga por noche de hospedaje?','¿Cuánto le cuesta el hotel?'],['How much do you pay per night for lodging?','How much does the hotel cost?'],{n:3,espera:NUM,busca:'Que el costo sea razonable frente a tus ingresos.',tip:'Una cifra aproximada y real. Si no lo sabes aún, dilo con naturalidad.'}),
+    q_costoHotel:Q('q_costoHotel','C',43,['¿Cuánto paga por noche de hospedaje?','¿Cuánto le cuesta el hotel?'],['How much do you pay per night for lodging?','How much does the hotel cost?'],{n:3,espera:NUM,verifica:'costoNoche',busca:'Que el costo sea razonable frente a tus ingresos.',tip:'Una cifra aproximada y real. Si no lo sabes aún, dilo con naturalidad.'}),
     // ===== D. Acompañantes =====
     q_acompanante:Q('q_acompanante','D',50,['¿Viaja solo o con alguien?','¿Alguien viaja con usted?','¿Va acompañado?'],['Are you traveling alone or with someone?','Is anyone traveling with you?','Are you traveling with someone?'],{verifica:'acompanante',busca:'Quién viaja y que cuadre con quién paga y dónde se hospeda.',tip:'Si viajas acompañado, di nombre y relación; igual que en tu DS-160.',
       seg:[{re:/amig|compan|con mi|primo|prima|hermano|hermana|novi|espos|pareja|familia|colega|with my|friend/,not:/\b(solo|sola|alone)\b/,id:'s_acomp',es:'¿Quién es esa persona, a qué se dedica y cuál es su relación con usted?',en:'Who is that person, what do they do, and what is your relationship?',verifica:'acompanante'}]}),
@@ -641,13 +719,13 @@ const MotorConsul = (function(){
     q_quienpaga:Q('q_quienpaga','F',80,['¿Quién paga su viaje?','¿Quién va a cubrir los gastos del viaje?','¿Con qué dinero va a viajar?'],['Who is paying for your trip?','Who will cover the trip expenses?','How are you paying for this trip?'],{ob:true,verifica:'paga',busca:'Viaje pagable con recursos reales.',tip:'Di quién paga, igual que en tu DS-160.',
       seg:[{re:/mi (tio|tia|madre|mama|padre|papa|hermano|hermana|primo|prima|familia|esposo|esposa|pareja)|amig|my (uncle|aunt|mother|father|family)|friend/,not:/\byo\b|mis ahorros|myself/,id:'s_patrocinador',es:'¿Y por qué esa persona paga su viaje? ¿A qué se dedica?',en:'And why is that person paying for your trip? What do they do?'}]}),
     q_salario:Q('q_salario','F',81,['¿Cuánto gana al mes?','¿Cuál es su ingreso mensual?','¿Cuánto es su sueldo?'],['How much do you earn per month?','What is your monthly income?','What is your salary?'],{n:2,verifica:'salario',espera:/\d|mil|peso|mxn|thousand/,busca:'Cifras que cuadren con el costo del viaje.',tip:'Di tu ingreso real mensual, igual que en tu DS-160.'}),
-    q_costo:Q('q_costo','F',82,['¿Cuánto cuesta su viaje en total?','¿Cuánto calcula que va a gastar en todo el viaje?'],['How much will the trip cost in total?','How much do you expect to spend on the whole trip?'],{n:3,espera:NUM,busca:'Que el costo sea razonable frente a tus ingresos.',tip:'Da una cifra aproximada y la fuente real del dinero (ahorros, salario).'}),
+    q_costo:Q('q_costo','F',82,['¿Cuánto cuesta su viaje en total?','¿Cuánto calcula que va a gastar en todo el viaje?'],['How much will the trip cost in total?','How much do you expect to spend on the whole trip?'],{n:3,espera:NUM,verifica:'costoTotal',busca:'Que el costo sea razonable frente a tus ingresos.',tip:'Da una cifra aproximada y la fuente real del dinero (ahorros, salario).'}),
     q_pagaEstancia:Q('q_pagaEstancia','F',83,['¿Cómo va a pagar su estancia?','¿Cómo va a cubrir sus gastos allá?'],['How will you pay for your stay?','How will you cover your expenses there?'],{n:2,busca:'Fuente real del dinero.',tip:'Di de dónde sale el dinero (salario, ahorros), con la verdad.'}),
     q_ahorros:Q('q_ahorros','F',84,['¿Tiene ahorros?','¿Cuenta con ahorros para este viaje?'],['Do you have savings?','Do you have savings for this trip?'],{corta:true,espera:SEG_SINO,busca:'Solvencia real.',tip:'Responde con la verdad, sin inflar cifras. No entregues estados de cuenta si no los piden.'}),
     q_bienes:Q('q_bienes','F',85,['¿Tiene propiedades o bienes a su nombre?','¿Tiene casa, terreno o auto a su nombre?'],['Do you own property or assets?','Do you own a house, land or a car?'],{n:2,corta:true,espera:SEG_SINO,busca:'Arraigo económico.',tip:'Responde con la verdad. No tener propiedades no es malo.'}),
     q_cuantoLleva:Q('q_cuantoLleva','F',86,['¿Cuánto dinero piensa llevar?','¿Con cuánto dinero va a viajar?'],['How much money will you carry?','How much money are you traveling with?'],{n:3,espera:NUM,busca:'Cifra razonable y verdadera.',tip:'Una cifra aproximada real, coherente con tu salario y tu plan.'}),
     q_impuestos:Q('q_impuestos','F',87,['¿Paga impuestos en México?','¿Está dado de alta en el SAT?'],['Do you pay taxes in Mexico?','Are you registered with the tax authority?'],{n:2,corta:true,espera:SEG_SINO,busca:'Formalidad de tus ingresos.',tip:'Responde con la verdad.'}),
-    q_gastoDiario:Q('q_gastoDiario','F',88,['¿Cuánto piensa gastar al día?','¿Qué presupuesto diario tiene?'],['How much do you plan to spend per day?','What is your daily budget?'],{n:3,espera:NUM,busca:'Plan de gastos realista.',tip:'Una cifra aproximada y real. Si no la calculaste, dilo con naturalidad.'}),
+    q_gastoDiario:Q('q_gastoDiario','F',88,['¿Cuánto piensa gastar al día?','¿Qué presupuesto diario tiene?'],['How much do you plan to spend per day?','What is your daily budget?'],{n:3,espera:NUM,verifica:'gastoDiario',busca:'Plan de gastos realista.',tip:'Una cifra aproximada y real. Si no la calculaste, dilo con naturalidad.'}),
     q_comoPagaAlla:Q('q_comoPagaAlla','F',89,['¿Cómo va a pagar allá: con tarjeta o en efectivo?','¿Va a usar tarjeta o efectivo?'],['How will you pay there: card or cash?','Will you use a card or cash?'],{n:1,espera:/tarjet|efectiv|ambos|card|cash|both/,busca:'Plan de pago concreto.',tip:'Responde con la verdad en una frase.'}),
     // ===== G. Familia y arraigo en México =====
     q_estadoCivil:Q('q_estadoCivil','G',90,['¿Está casado o tiene pareja? ¿Tiene hijos?','¿Cuál es su estado civil? ¿Tiene hijos?'],['Are you married or do you have a partner? Do you have children?','What is your marital status? Do you have children?'],{verifica:'civil',busca:'Arraigo familiar.',tip:'Estado civil e hijos tal como en tu DS-160, en una frase.'}),
@@ -916,7 +994,7 @@ const MotorConsul = (function(){
 /* ======================================================================
    PERFIL, VALIDACIÓN, EJEMPLO
    ====================================================================== */
-const CAMPOS=['nombre','edad','estadoCivil','hijos','estudios','empresa','puesto','ingresoActual','salario','trabAntEmpresa','trabAntInicio','trabAntFin','llegada','dias','ciudad','hospedaje','quienPaga','pagaDetalle','acompNombre','acompRelacion','viajesPrev','visaNegada','familiaEUA','redFacebook','redInstagram','redOtras','consulado','citaFecha','citaHora','casFecha','casHora'];
+const CAMPOS=['nombre','edad','estadoCivil','hijos','estudios','empresa','puesto','ingresoActual','salario','trabAntEmpresa','trabAntInicio','trabAntFin','llegada','dias','ciudad','hospedaje','quienPaga','pagaDetalle','acompNombre','acompRelacion','viajesPrev','visaNegada','familiaEUA','redFacebook','redInstagram','redOtras','lugares','costoNoche','costoTotal','gastoDiario','reservas','consulado','citaFecha','citaHora','casFecha','casHora'];
 const $=id=>document.getElementById(id);
 // Redes: tres campos en el formulario; p.redes se arma para la evaluación y la validación (vacío = no la declaró)
 const SIN_RED=/^(no|ninguna?|n\/?a|none|no aplica|-)$/i;
@@ -928,7 +1006,7 @@ function migrarRedes(p){ if(!p||typeof p.redes!=='string'||'redFacebook' in p||'
   p.redes.split(/\s*(?:,|;|\/|\by\b|\band\b)\s*/i).map(s=>s.trim()).filter(Boolean).forEach(t=>{
     if(/facebook|\bfb\b/i.test(t)) q.redFacebook='declarada'; else if(/instagram|\big\b/i.test(t)) q.redInstagram='declarada'; else if(!SIN_RED.test(t)) otras.push(t); });
   q.redOtras=otras.join(', '); return q; }
-function leerPerfil(){ const p={}; CAMPOS.forEach(c=>{ const e=$(c); p[c]=e?e.value:''; }); ['edad','hijos','salario','dias'].forEach(c=>p[c]=p[c]===''?0:+p[c]); p.redes=armarRedes(p); return p; }
+function leerPerfil(){ const p={}; CAMPOS.forEach(c=>{ const e=$(c); p[c]=e?e.value:''; }); ['edad','hijos','salario','dias','costoNoche','costoTotal','gastoDiario'].forEach(c=>p[c]=p[c]===''||p[c]==null?0:+p[c]); p.redes=armarRedes(p); return p; }
 function escribirPerfil(p){ p=migrarRedes(p); CAMPOS.forEach(c=>{ const e=$(c); if(e&&p[c]!=null) e.value=p[c]; }); }
 function ejemplo(){
   const hoy=U.today(); const cita=U.nextWeekday(U.addDays(hoy,36)); const cas=U.nextWeekday(U.addDays(cita,-8));
@@ -938,6 +1016,7 @@ function ejemplo(){
     trabAntEmpresa:'Comercializadora Norte',trabAntInicio:U.iso(antIni),trabAntFin:U.iso(antFin),
     llegada:U.iso(U.addDays(cita,75)),dias:14,ciudad:'Orlando, Florida',hospedaje:'Hotel Palm Breeze, Orlando (reservación)',
     quienPaga:'yo',pagaDetalle:'con mis ahorros',acompNombre:'Carlos Pineda',acompRelacion:'amigo',viajesPrev:'ninguno',visaNegada:'no',
+    lugares:'Disney, Universal y Cocoa Beach',costoNoche:120,costoTotal:42000,gastoDiario:90,reservas:'hotel',
     familiaEUA:'Tía Rosa Solís, Houston, Texas (ciudadana)',redFacebook:'Mariana Solís Ibarra',redInstagram:'@mariana.solis.ficticia',redOtras:'',consulado:'Guadalajara',
     citaFecha:U.iso(cita),citaHora:'09:30',casFecha:U.iso(cas),casHora:'13:00'};
 }
@@ -1565,6 +1644,38 @@ $('fileDS160').addEventListener('change',async ev=>{
 });
 
 /* ======================================================================
+   PLAN DEL VIAJE DESDE UN LINK (v1.7, 26-nov-2026)
+   Un link con #viaje=<datos> (JSON en base64url) propone llenar el "Plan del viaje".
+   Nada cambia hasta que el usuario confirma; después se borra el #viaje del link.
+   ====================================================================== */
+const VIAJE_DEFS=[['lugares','Lugares y actividades','text'],['costoNoche','Hospedaje por noche (USD)','number'],['costoTotal','Costo total de tu viaje (MXN)','number'],['gastoDiario','Gasto al día allá (USD)','number'],['reservas','Reservado hoy','sel']];
+const RESERVAS_OPC=[['','Sin dato'],['nada','Nada todavía'],['hotel','Solo el hospedaje'],['vuelos','Solo los vuelos'],['ambos','Hospedaje y vuelos']];
+function leerViajeDeLink(hash){
+  const m=/^#viaje=([A-Za-z0-9_-]{4,4000})={0,2}$/.exec(hash||''); if(!m) return null;
+  let j; try{ const b=m[1].replace(/-/g,'+').replace(/_/g,'/'); const bin=atob(b+'==='.slice((b.length+3)%4)); const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0)); j=JSON.parse(new TextDecoder().decode(bytes)); }catch(e){ return null; }
+  if(!j||typeof j!=='object') return null; const R={};
+  if(typeof j.lugares==='string'&&j.lugares.trim()) R.lugares=j.lugares.trim().slice(0,200);
+  ['costoNoche','costoTotal','gastoDiario'].forEach(k=>{ const v=+j[k]; if(isFinite(v)&&v>0&&v<10000000) R[k]=Math.round(v); });
+  if(RESERVAS_OPC.some(o=>o[0]&&o[0]===j.reservas)) R.reservas=j.reservas;
+  return Object.keys(R).length?R:null;
+}
+function quitarViajeDelLink(){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} }
+function mostrarConfirmacionViaje(R){
+  const box=$('confViaje'); const act=leerPerfil();
+  const txt=(k,v)=>{ if(v===''||v===0||v==null) return '—'; if(k==='reservas'){ const o=RESERVAS_OPC.find(x=>x[0]===v); return o?o[1]:String(v); } return typeof v==='number'?v.toLocaleString('es-MX'):String(v); };
+  let h='<h2>Datos de tu itinerario</h2><p class="tip">Este link trae el plan de tu viaje. Marca lo que quieras pasar a tu perfil; si no marcas un campo, tu dato actual no cambia.</p><div class="dsrows" role="table" aria-label="Datos del plan del viaje"><div class="dsrow dshead" role="row"><div role="columnheader">Campo</div><div role="columnheader">Dato del itinerario</div><div role="columnheader">Dato actual</div></div>';
+  VIAJE_DEFS.forEach(([k,lab])=>{ if(!(k in R)) return;
+    h+='<div class="dsrow" role="row"><div role="cell" class="dscampo"><label class="dscheck"><input type="checkbox" id="vjc_'+k+'" checked><span>'+U.esc(lab)+'</span></label></div><div role="cell">'+U.esc(txt(k,R[k]))+'</div><div role="cell" class="dsact"><small>Dato actual</small> '+U.esc(txt(k,act[k]))+'</div></div>'; });
+  h+='</div><div class="row" style="margin-top:12px"><button class="btn" id="btnConfViaje" type="button">Pasar a mi perfil</button><button class="btn sec" id="btnCancViaje" type="button">Cancelar</button></div>';
+  box.innerHTML=h; box.classList.remove('hidden'); if(typeof irA==='function') irA('perfil');
+  $('btnCancViaje').addEventListener('click',()=>{ box.innerHTML='<p class="tip">Carga cancelada. No se cambió tu perfil.</p>'; quitarViajeDelLink(); });
+  $('btnConfViaje').addEventListener('click',()=>{ const nuevo={}; let n=0;
+    VIAJE_DEFS.forEach(([k])=>{ const c=$('vjc_'+k); if(c&&c.checked){ nuevo[k]=R[k]; n++; } });
+    escribirPerfil(nuevo); guardarPerfil(); pintarValidaciones(); quitarViajeDelLink();
+    box.innerHTML='<p class="tip"><strong>Listo:</strong> se pasaron '+n+' datos al "Plan del viaje" de tu perfil. Ahora el simulador compara tus respuestas con tu itinerario.</p>'; });
+}
+
+/* ======================================================================
    ARRANQUE
    ====================================================================== */
 $('btnEjemplo').addEventListener('click',()=>{ escribirPerfil(ejemplo()); guardarPerfil(); pintarValidaciones(); });
@@ -1576,6 +1687,8 @@ $('btnIrEntrevista').addEventListener('click',()=>{ pintarValidaciones(); irA('e
   const pr=U.store.get(K.prefs,{}); aplicarTema(pr.tema||null);
   $('selPausa').value=['3','5','8','0'].indexOf(pr.pausaMic)>=0?pr.pausaMic:'5'; // 5 s si no ha elegido
   const p=U.store.get(K.perfil,null); if(p) escribirPerfil(p);
+  { const RV=leerViajeDeLink(location.hash); if(RV) mostrarConfirmacionViaje(RV); }
+  window.addEventListener('hashchange',()=>{ const RV=leerViajeDeLink(location.hash); if(RV) mostrarConfirmacionViaje(RV); });
   pintarValidaciones();
 })();
 

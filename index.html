@@ -410,7 +410,7 @@ const MotorConsul = (function(){
     else if(!usd&&!mxn) metas=metas.concat(metas.map(v=>moneda==='USD'?v*TC_APROX:v/TC_APROX));
     const ok=nums.some(x=>metas.some(m=>Math.abs(x-m)<=m*0.3));
     if(ok) return {score:usd||mxn?100:90,alertas:[],notas:usd||mxn?[]:['Di la moneda: pesos o dólares.']};
-    // v1.8 (pedido de Jonathan, 26-nov-2026): una cifra cercana (hasta ±50 %) no es contradicción; solo se pide acercarla al plan
+    // v1.8 (pedido del usuario, 26-nov-2026): una cifra cercana (hasta ±50 %) no es contradicción; solo se pide acercarla al plan
     // la banda de ±50 % solo cuenta contra la cifra base del plan (no contra la estancia completa ni la mitad): El Contreras, 26-nov-2026
     let base=[obj]; if(moneda==='USD'&&mxn&&!usd) base=[obj*TC_APROX]; else if(moneda==='MXN'&&usd&&!mxn) base=[obj/TC_APROX]; else if(!usd&&!mxn) base=[obj,moneda==='USD'?obj*TC_APROX:obj/TC_APROX];
     if(nums.some(x=>base.some(m=>Math.abs(x-m)<=m*0.5))) return {score:75,alertas:[],notas:['Cifra cercana, pero tu plan dice '+dicho+': usa la misma cifra siempre.']};
@@ -608,7 +608,7 @@ const MotorConsul = (function(){
     gastoDiario(tn,p){ return montoPlan(tn,+p.gastoDiario,'USD','tu gasto al día',[1]); },
     reservas(tn,p){
       const r=p.reservas; if(!r) return null;
-      // v1.8 (pedido de Jonathan, 26-nov-2026): "nada más / nomás / no más el hotel" significa "solo el hotel", no es negación
+      // v1.8 (pedido del usuario, 26-nov-2026): "nada más / nomás / no más el hotel" significa "solo el hotel", no es negación
       tn=tn.replace(/\b(nada mas|nomas)\b/g,'solo').replace(/\bno mas (?=(el|la|los|las|the)\b)/g,'solo ');
       const V='(?:vuelos?|avion|boletos?|flights?|plane tickets?|tickets?)', H='(?:hotel|hospedaje|hostal|hostel|cuarto|habitacion|airbnb|lodging|room|accommodation)';
       const NEG='\\b(?:no|todavia no|aun no|sin|ni|not yet|not|haven.?t|no he|no hemos|tampoco)';
@@ -908,7 +908,7 @@ const MotorConsul = (function(){
     return {cola,motivos,nivel:plan.nivel,nivelNombre:cfg.nombre,debiles:plan.debiles,maxRep:cfg.rep,pool,recientes:[...recientes]};
   }
 
-  // v1.8 (pedido de Jonathan, 26-nov-2026): práctica corta "Solo mi viaje" (propósito, plan, fechas, hospedaje, reservaciones y dinero)
+  // v1.8 (pedido del usuario, 26-nov-2026): práctica corta "Solo mi viaje" (propósito, plan, fechas, hospedaje, reservaciones y dinero)
   function elegirViaje(perfil,opts){
     opts=opts||{}; const m=marcas(perfil); const B=bancoPreguntas; const plan=planAdaptativo(opts);
     const ok=id=>B[id]&&elegible(B[id],perfil,m);

@@ -126,7 +126,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.5 · 24-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.6 · 25-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
@@ -254,6 +254,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 <!-- ============ PLAN ============ -->
 <section class="panel" id="tab-plan">
   <div class="card"><h2>Mi plan hasta la cita</h2><div id="planCuenta"></div><div id="planHoy"></div></div>
+  <div class="card"><h3>Repaso de 1 minuto</h3><p class="tip">Tus datos clave, tomados de tu perfil (tu DS-160). Repásalos antes de practicar y camino al consulado. Conoce los datos; no memorices frases.</p><div id="planRepaso"></div></div>
   <div class="card"><h3>Rutina diaria</h3><div id="planRutina"></div></div>
   <div class="card"><h3>Documentos para llevar</h3><p class="tip">Lleva todo impreso en una carpeta. Los estados de cuenta y la constancia laboral solo se muestran si el oficial los pide.</p><div id="chkDocs"></div></div>
   <div class="card"><h3>Checklist del día de la cita</h3><div id="chkDia"></div></div>
@@ -281,6 +282,12 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
     <details><summary>Qué pasa si te niegan la visa</summary>
       <ul><li>Pide y lee con calma la hoja que te entregan: dice el motivo.</li><li>Antes de volver a solicitar, revisa qué cambió de verdad en tu trabajo, ingresos, familia o bienes, y qué tan claro fue tu propósito.</li><li>Nunca inventes vínculos ni documentos. Mentir o dar un dato falso importante a propósito puede causar una inadmisibilidad permanente.</li></ul>
     </details>
+    <details><summary>Actitud en la ventanilla</summary>
+      <ul><li>El oficial quiere confirmar dos cosas: que puedes pagar tu viaje y que tienes motivos reales para regresar a México.</li><li>Mira al oficial a los ojos y habla con voz clara. Es normal estar nervioso: que sean nervios de emoción, no de miedo. Piensa que es como un trámite en el banco.</li><li>Contesta lo que te preguntan, en una o dos frases. Si no entiendes una pregunta, pide que te la repita.</li><li>Ten tus documentos en orden, pero entrega solo los que te pidan.</li></ul>
+    </details>
+    <details><summary>Tus redes sociales</summary>
+      <ul><li>Tus redes deben coincidir con las que declaraste en tu DS-160 (las de los últimos 5 años).</li><li>No las borres ni las cambies de golpe antes de la entrevista, y no publiques ni des "me gusta" solo para que el oficial lo vea: tu perfil debe mostrar tu vida real.</li><li>Ponerlas en público o no es tu decisión. Las fuentes se contradicen sobre si revisan perfiles en la B1/B2; la regla de perfiles públicos confirmada es para otras visas.</li></ul>
+    </details>
     <details><summary>Errores comunes</summary>
       <ul><li>Respuestas memorizadas: suenan ensayadas. Conoce tus datos, no memorices frases.</li><li>Dar documentos sin que los pidan.</li><li>Contradecir la DS-160. Si algo cambió o hubo un error, corrígelo y dilo.</li><li>Hablar de más: historias y datos que no te preguntaron.</li><li>Decir "voy a buscar trabajo", "a ver si me quedo" o "voy a tomar un curso": no es turismo y rompe la presunción.</li><li>No declarar una red social en la DS-160: la solicitud pide las usadas en los últimos 5 años.</li></ul>
     </details>
@@ -290,7 +297,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
     <details><summary>Cambios recientes (2025 y 2026)</summary>
       <ul><li>Desde el 2-sep-2025 casi todos los solicitantes van a entrevista presencial.</li><li>La B1/B2 no exige inglés: se puede atender en español.</li><li>Sobre revisión de redes sociales y el cobro del Visa Integrity Fee hay fuentes que se contradicen: confirma en fuentes oficiales.</li></ul>
     </details>
-    <p class="tip">Fuentes principales (no oficiales, revisadas el 3-nov-2026): ViveUSA, Lighthouse, Atlys, NNU Immigration, Fragomen, Faegre Drinker. Fuente oficial del CAS: ais.usvisa-info.com.</p>
+    <p class="tip">Fuentes principales (no oficiales, revisadas el 3-nov-2026 y el 25-nov-2026): guía de una agencia de trámites de visa, ViveUSA, Lighthouse, Atlys, NNU Immigration, Fragomen, Faegre Drinker. Fuente oficial del CAS: ais.usvisa-info.com.</p>
   </div>
 </section>
 </main>
@@ -409,11 +416,21 @@ const MotorConsul = (function(){
     t=t.replace(RE_QLUGAR,(m,lugar)=>MAL_LUGAR.test(lugar)?m:' ');
     return t;
   }
-  function detectarAlertas(tn){
-    const limpio=neutralizarQuedar(tn.replace(NEGACION,' ')); const out=[];
+  // v1.6: "no, nunca he pensado en vivir allá", "no me gustaría vivir allá", "I never thought about living there" (revisión de El Contreras, 25-nov-2026)
+  const NEG_VIVIR=/\b(no|nunca|jamas)\s+(lo\s+)?(he\s+pensado\s+en|he\s+pensado|habia\s+pensado\s+en|pense\s+en|lo\s+pense\s+para|pensaria\s+en|me\s+gustaria|me\s+interesa|quisiera|quiero|pienso|planeo|pretendo|me\s+veo|tengo\s+(planes?|intencion|pensado)(\s+de)?)\s+(irme\s+a\s+)?vivir\s+(alla|en\s+(estados\s+unidos|estados|eua|ee\s?uu|usa))\b|\b(never|not|don\s?t|do\s+not|won\s?t|will\s+not|wouldn\s?t|would\s+not|n.?t)\s+(\w+\s+)?(thought\s+about|want\s+to|like\s+to|plan\s+to|planning\s+to)\s+(liv(e|ing)|mov(e|ing))\s+there\b/g;
+  const RE_PROPIA=new RegExp('\\b(?:estar|estare|estaremos|quedar\\w*|quedo|voy|vamos|viaje|trip|stay\\w*|i will be|we will be)\\s+(?:\\S+\\s+){0,3}?(?:\\d+|'+NUMALT+')\\s*(?:dias?|semanas?|meses|mes|days?|weeks?|months?)\\b','g');
+  // Lo que la visa permite ("puedo quedarme hasta seis meses", "I can stay up to six months") no es el plan propio
+  const UNI='\\s*(?:dias?|semanas?|meses|mes|days?|weeks?|months?)\\b';
+  const RE_PERMISO=new RegExp('\\b(?:(?:puedo|puede|pueden|podemos|podria|podre|me dejan|nos dejan|te dejan|le dejan|me permiten|nos permiten|te permiten|le permiten|permite|permiten|can|could|may|allowed to)\\s+(?:\\S+\\s+){0,3}?|(?:hasta|maximo|maxima|maximum|max|up to)\\s+)(?:\\d+|'+NUMALT+')'+UNI,'g');
+  function detectarAlertas(tn,q){
+    let limpio=neutralizarQuedar(tn.replace(NEGACION,' ').replace(NEG_VIVIR,' ')); const out=[];
+    if(q&&q.permisoLargo) limpio=limpio.replace(RE_PERMISO,' ');
     PATRONES.forEach(p=>{ if(p.re.test(limpio)) out.push({texto:p.t,grave:p.g}); });
     const dias=parseDias(limpio);
     const largo=/(\d+|\w+)\s*(dias?|semanas?|meses|mes|days?|weeks?|months?)\b/.test(limpio) && dias.some(d=>d>90);
+    // En q_tiempoVisa la cifra larga casi siempre es el permiso ("te dejan estar seis meses"): ahí no se alerta por más de 90 días.
+    // La estancia propia larga la detecta q_tiempo (decisión con El Contreras, 26-nov-2026).
+    if(largo&&q&&q.permisoLargo) return out;
     if(largo) out.push({texto:'Mencionaste una estancia de más de 90 días: para turismo suena a que no regresarás.',grave:true});
     return out;
   }
@@ -561,6 +578,7 @@ const MotorConsul = (function(){
   const TEMAS={A:'Propósito del viaje',B:'Viaje e itinerario',C:'Hospedaje',D:'Acompañantes',E:'Trabajo',F:'Dinero y quién paga',G:'Arraigo en México',H:'Familia en EUA',I:'Estudios',J:'Viajes y visas anteriores',K:'Historial legal',L:'Redes sociales',M:'Coherencia de datos',N:'Preguntas de seguridad'};
   const BLOQUE={A:0,B:1,C:1,D:1,E:2,I:2,F:3,G:4,H:4,J:5,K:5,L:5,N:5,M:9};
   const TV='Di la verdad, coherente con tu DS-160.';
+  const NUM_TXT=new RegExp(NUM.source+'|\\b('+NUMALT+')\\b');
   const bancoPreguntas={
     // ===== A. Apertura: propósito =====
     q_proposito:Q('q_proposito','A',10,['¿Cuál es el propósito de su viaje a Estados Unidos?','¿A qué va a Estados Unidos?','¿Cuál es el motivo de su viaje?'],['What is the purpose of your trip to the United States?','Why are you going to the United States?','What is the reason for your trip?'],{ob:true,espera:/turis|vacac|pasear|conocer|visit|negocio|conferencia|congreso|descans|tourism|vacation|business|trip|travel|vengo|voy a/,busca:'Un propósito concreto, corto y permitido (turismo o negocios).',tip:'Di el propósito en una frase y que coincida con tu DS-160. Sin "a ver qué pasa".',
@@ -674,6 +692,21 @@ const MotorConsul = (function(){
     q_fraude:Q('q_fraude','N',151,['¿Ha intentado obtener una visa con datos falsos?','¿Alguien le ayudó a llenar su solicitud con información falsa?'],['Have you ever tried to obtain a visa with false information?','Did anyone help you fill out your application with false information?'],{n:2,corta:true,espera:SEG_SINO,busca:'Verificación de seguridad.',tip:'Responde con la verdad. Si alguien te ayudó a llenar la DS-160, eso no es malo; lo importante es que todo sea verdad.'}),
     q_enfermedad:Q('q_enfermedad','N',152,['¿Tiene alguna enfermedad contagiosa importante?','¿Tiene alguna condición de salud que debamos saber?'],['Do you have any serious communicable disease?','Do you have any health condition we should know about?'],{corta:true,espera:SEG_SINO,busca:'Verificación de seguridad.',tip:'Responde con la verdad, igual que en tu DS-160.'}),
     q_votado:Q('q_votado','N',153,['¿Ha votado alguna vez en Estados Unidos?','¿Ha participado en elecciones de Estados Unidos?'],['Have you ever voted in the United States?','Have you ever participated in U.S. elections?'],{n:2,corta:true,espera:SEG_SINO,busca:'Verificación de seguridad.',tip:'Responde con la verdad.'}),
+    // ===== v1.6 (25-nov-2026): preguntas nuevas que el oficial puede hacer =====
+    q_cuandoPlaneo:Q('q_cuandoPlaneo','A',18,['¿Desde cuándo planea este viaje?','¿Cuándo decidió hacer este viaje?'],['How long have you been planning this trip?','When did you decide to take this trip?'],{n:2,busca:'Un viaje pensado con tiempo, no improvisado.',tip:'Di cuándo empezaste a planearlo de verdad, en una frase. Sin inventar fechas.'}),
+    q_costoVuelo:Q('q_costoVuelo','B',33,['¿Cuánto le cuesta el vuelo?','¿Cuánto calcula que le costará el boleto de avión?'],['How much is your flight?','How much do you expect the plane ticket to cost?'],{n:3,espera:NUM_TXT,busca:'Que conozcas los números reales de tu viaje.',tip:'Da la cifra real o aproximada. Si todavía no compras el boleto, dilo y da lo que calculas.'}),
+    q_tiempoVisa:Q('q_tiempoVisa','B',34,['¿Sabe cuánto tiempo puede quedarse con esta visa?','¿Cuánto tiempo le permite estar allá esta visa?'],['Do you know how long you can stay with this visa?','How long does this visa allow you to stay there?'],{n:3,permisoLargo:true,busca:'Que tu plan de estancia sea corto y claro.',tip:'El tiempo de cada estancia lo fija el oficial de migración al entrar. Di eso y cuántos días dura tu plan, igual que en tu DS-160.'}),
+    q_hotelComo:Q('q_hotelComo','C',44,['¿Cómo eligió ese hospedaje?','¿Por qué ese hotel?'],['How did you choose that place to stay?','Why that hotel?'],{n:2,busca:'Que el hospedaje tenga una razón sencilla.',tip:'Una razón real y corta (ubicación, precio, cerca de lo que quieres conocer).'}),
+    q_acompPaga:Q('q_acompPaga','D',56,['¿Su acompañante paga sus propios gastos?','¿Quién paga el viaje de su acompañante?'],['Is your companion paying for their own expenses?','Who is paying for your companion\'s trip?'],{n:2,si:'acomp',busca:'Que cada quien tenga claro quién paga qué.',tip:'Di la verdad sobre cómo se reparten los gastos, en una frase.'}),
+    q_acompRegresa:Q('q_acompRegresa','D',57,['¿Su acompañante regresa con usted a México?','¿Regresan juntos?'],['Is your companion coming back to Mexico with you?','Are you returning together?'],{n:2,si:'acomp',corta:true,espera:SEG_SINO,busca:'Que el regreso sea el mismo plan para los dos.',tip:'Responde con la verdad y con las mismas fechas de tu DS-160.'}),
+    q_diasVacaciones:Q('q_diasVacaciones','E',73,['¿Cuántos días de vacaciones tiene al año?','¿Cuántos periodos de vacaciones le da su trabajo?'],['How many vacation days do you have per year?','How many vacation periods does your job give you?'],{n:2,espera:NUM_TXT,busca:'Que tu viaje quepa en tus vacaciones reales.',tip:'Di los días o periodos reales que te da tu trabajo y que el viaje cabe en ellos.'}),
+    q_traeDoc:Q('q_traeDoc','E',74,['¿Trae su constancia laboral? ¿Me la puede mostrar?','¿Tiene algún documento de su trabajo?'],['Do you have your employment letter? Can you show it to me?','Do you have any document from your job?'],{n:2,busca:'Que entregues solo lo que te piden, sin sacar toda la carpeta.',tip:'Si la traes, di "sí, aquí está" y entrega solo esa hoja. Si no la traes, dilo con la verdad.'}),
+    q_otrosIngresos:Q('q_otrosIngresos','F',89,['¿Tiene otros ingresos además de su sueldo?','¿Recibe dinero de alguna otra fuente?'],['Do you have any other income besides your salary?','Do you receive money from any other source?'],{n:2,busca:'Fuentes de ingreso claras.',tip:'Responde con la verdad. Si solo vives de tu sueldo, dilo así; no es un problema.'}),
+    q_regresoTrabajo:Q('q_regresoTrabajo','G',101,['¿Qué día regresa a trabajar después del viaje?','¿Cuándo vuelve a su trabajo?'],['What day do you go back to work after the trip?','When do you return to your job?'],{n:2,busca:'Una fecha concreta que te espera en México.',tip:'Di la fecha real en que vuelves a tu trabajo; debe cuadrar con tu fecha de regreso.'}),
+    q_vivirEUA:Q('q_vivirEUA','G',102,['¿Alguna vez ha pensado en vivir en Estados Unidos?','¿Le gustaría vivir allá?'],['Have you ever thought about living in the United States?','Would you like to live there?'],{n:3,busca:'Intención clara de regreso.',tip:'Responde con la verdad y con calma. Si tu plan es viajar y regresar a tu vida en México, dilo así, en una frase.'}),
+    q_ultimasVacaciones:Q('q_ultimasVacaciones','J',126,['¿A dónde fue en sus últimas vacaciones?','¿Cuál fue su último viaje?'],['Where did you go on your last vacation?','What was your last trip?'],{n:2,busca:'Historial de viajes con regreso.',tip:'Di a dónde fuiste y que regresaste, con la verdad, en una frase.'}),
+    q_ayudaDS160:Q('q_ayudaDS160','N',154,['¿Alguien le ayudó a llenar su solicitud?','¿Usted llenó su DS-160?'],['Did anyone help you fill out your application?','Did you fill out your DS-160 yourself?'],{n:2,busca:'Que conozcas y respaldes lo que dice tu solicitud.',tip:'Si te ayudó una agencia o una persona, dilo sin pena. Lo importante es que la revisaste y todo lo que dice es verdad.'}),
+    q_miedo:Q('q_miedo','N',155,['¿Tiene miedo de regresar a México?','¿Teme sufrir algún daño si regresa a su país?'],['Are you afraid to return to Mexico?','Do you fear any harm if you return to your country?'],{n:2,corta:true,espera:SEG_SINO,busca:'Verificación: la visa de turista no es para pedir protección.',tip:'Responde con la verdad. Si no tienes miedo, di "no" con claridad.'}),
     // ===== M. Preguntas trampa y de coherencia (se insertan después de su pregunta base) =====
     t_dias:Q('t_dias','M',900,['Disculpe, ¿cuántos días dijo que se quedaría?','Recuérdeme, ¿cuántos días va a estar allá?'],['Sorry, how many days did you say you would stay?','Remind me, how many days will you be there?'],{n:3,verifica:'dias',trampa:true,refiere:'q_tiempo',base:'q_tiempo',busca:'Que repitas el mismo dato sin cambiarlo.',tip:'Repite el mismo número: es un dato que conoces porque es verdad.'}),
     t_puesto:Q('t_puesto','M',901,['Confírmeme el nombre de su empresa y su puesto.','Otra vez, ¿dónde trabaja y qué puesto tiene?'],['Please confirm the name of your employer and your position.','Once again, where do you work and what is your position?'],{n:3,verifica:'puesto',trampa:true,refiere:'q_trabajo',base:'q_trabajo',busca:'Mismo dato, dicho otra vez.',tip:'Los mismos datos de tu DS-160, sin cambios.'}),
@@ -736,7 +769,7 @@ const MotorConsul = (function(){
     const B=bancoPreguntas; const ids=Object.keys(B).filter(id=>elegible(B[id],perfil,m));
     const elegidas=[];
     // Preguntas que dicen casi lo mismo: solo una por entrevista (observación de El Contreras, 5-nov-2026)
-    const GRUPOS=[['q_primeraVez','q_visaAntes','q_negada']];
+    const GRUPOS=[['q_primeraVez','q_visaAntes','q_negada'],['q_viajesPrev','q_ultimasVacaciones'],['q_noquedarse','q_vivirEUA'],['q_fraude','q_ayudaDS160']];
     const ya=id=>elegidas.indexOf(id)>-1||GRUPOS.some(g=>g.indexOf(id)>-1&&g.some(o=>o!==id&&elegidas.indexOf(o)>-1));
     const tomar=id=>{ if(id&&B[id]&&!ya(id)) elegidas.push(id); };
     // Elige k preguntas de una lista de candidatos: primero las no recientes, ponderadas por el nivel del día
@@ -815,7 +848,7 @@ const MotorConsul = (function(){
     const tn=U.norm(texto); const palabras=tn?tn.split(' ').filter(Boolean).length:0;
     const alertas=[]; const tips=[]; const notas=[];
     // Alertas generales
-    detectarAlertas(tn).forEach(a=>alertas.push(a));
+    detectarAlertas(tn,q).forEach(a=>alertas.push(a));
     // Claridad
     let claridad=100;
     if(!palabras) claridad=0;
@@ -1153,13 +1186,19 @@ const DOCS=[
   ['pasaporte','Pasaporte vigente (y pasaportes anteriores si los tienes)'],
   ['ds160','Confirmación de la DS-160 impresa, con código de barras (y la original si corregiste algo)'],
   ['cita','Confirmación de la cita impresa'],
-  ['pago','Comprobante de pago de la cuota de la visa'],
+  ['pago','Comprobante de pago de la cuota de la visa (USD 185 en 2026; verifica la cuota vigente)'],
   ['laboral','Constancia laboral con fecha de ingreso (solo se muestra si el oficial la pide)'],
-  ['cuentas','Estados de cuenta recientes (solo si el oficial los pide)'],
+  ['cuentas','Estados de cuenta de los últimos 3 meses (solo si el oficial los pide)'],
+  ['nomina','Recibos de nómina de los últimos 2 meses y credencial del trabajo (solo si los pide)'],
+  ['estudios','Comprobante de tu último grado de estudios (solo si lo pide)'],
+  ['domicilio','Comprobante de domicilio (solo si lo pide)'],
+  ['bienes','Si tienes bienes: tarjeta de circulación del auto o recibo del predial de tu casa (solo si los pide)'],
   ['itinerario','Itinerario y reservaciones, impresos (solo si los pide)'],
   ['carpeta','Todo en una carpeta ordenada, sin entregar nada que no pidan']
 ];
 const DIA=[
+  ['ds160pas','La hoja de confirmación de la DS-160 (la del código de barras) dentro del pasaporte, en la página de tu foto: así la tienes a la mano'],
+  ['nometal','Sin cinturón de hebilla grande ni objetos metálicos grandes: pasas por un detector de metales'],
   ['nomochila','No llevar mochilas ni maletas grandes (más de unos 45 x 45 cm); bolso pequeño'],
   ['noalimentos','No llevar alimentos ni líquidos, lociones ni aerosoles (salvo bebé o necesidad médica)'],
   ['nopunzo','No llevar punzocortantes: tijeras, limas, navajas, encendedores'],
@@ -1167,7 +1206,7 @@ const DIA=[
   ['sinacomp','Los acompañantes normalmente no entran (salvo menores o quien necesite asistencia): avísales'],
   ['margen','Llegar con margen, pero llega a la hora que indique tu confirmación de cita (en algunas citas piden no llegar más de 15 minutos antes)'],
   ['dormir','Dormir bien la noche anterior'],
-  ['ropa','Ropa sobria y cómoda'],
+  ['ropa','Ropa business casual (casual formal), limpia y cómoda: que te veas como una persona estable'],
   ['efectivo','Efectivo para estacionamiento o transporte, y plan B de traslado'],
   ['repaso','Repasar tus datos: trabajo, fechas, viaje, hospedaje, quién paga (sin memorizar frases)']
 ];
@@ -1188,6 +1227,32 @@ function tareasDelDia(d,i,cita,cas,tieneAlertas){
   if(resta===3) t.push('Define y reserva tu plan de traslado (dormir allá, auto o autobús).');
   return t;
 }
+const QUIEN_PAGA={yo:'Yo, con mis recursos',familiar:'Un familiar',empresa:'Mi empresa',pareja:'Mi pareja',otro:'Otra persona'};
+function datosRepaso(p){
+  const f=k=>(p[k]==null?'':String(p[k])).trim(); const falta='Captúralo en "Mi perfil"';
+  const ing=U.parseDate(p.ingresoActual), lleg=U.parseDate(p.llegada), dias=+p.dias||0;
+  const trabajo=[f('puesto'),f('empresa')].filter(Boolean).join(' en ');
+  const reg=lleg&&dias?U.addDays(lleg,dias):null;
+  const acomp=f('acompNombre')?f('acompNombre')+(f('acompRelacion')?' ('+f('acompRelacion')+')':''):'Viajo solo(a)';
+  const paga=(QUIEN_PAGA[p.quienPaga]||f('quienPaga'))+(p.quienPaga!=='yo'&&f('pagaDetalle')?': '+f('pagaDetalle'):'');
+  return [
+    ['Destino',f('ciudad')||falta],
+    ['Fechas',lleg?'Llego el '+U.fmt(lleg)+(dias?', '+dias+' días; regreso el '+U.fmt(reg):''):falta],
+    ['Hospedaje',f('hospedaje')||falta],
+    ['Con quién viajo',acomp],
+    ['Trabajo',trabajo||falta],
+    ['Desde cuándo',ing?['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][ing.getMonth()]+' de '+ing.getFullYear():falta],
+    ['Sueldo al mes',+p.salario?'MXN '+(+p.salario).toLocaleString('es-MX'):falta],
+    ['Quién paga',paga],
+    ['Familia en EUA',f('familiaEUA')||'Ninguna'],
+    ['Viajes anteriores',f('viajesPrev')||falta],
+    ['Redes declaradas',p.redes||'Ninguna']
+  ];
+}
+function pintarRepaso(p){
+  const el=$('planRepaso'); if(!el) return;
+  el.innerHTML='<div class="tablewrap"><table><tbody>'+datosRepaso(p).map(([k,v])=>'<tr><th scope="row" style="text-align:left;white-space:nowrap;padding-right:10px">'+U.esc(k)+'</th><td>'+U.esc(v)+'</td></tr>').join('')+'</tbody></table></div>';
+}
 function pintarPlan(){
   const p=leerPerfil(); const hoy=U.today(); const cita=U.parseDate(p.citaFecha), cas=U.parseDate(p.casFecha);
   let c='';
@@ -1207,6 +1272,7 @@ function pintarPlan(){
     const fila=x=>'<tr><td style="white-space:nowrap">'+U.fmt(x.d)+'</td><td>'+x.t.map(U.esc).join('<br>')+'</td></tr>';
     $('planRutina').innerHTML='<p class="tip">Rutina calculada desde hoy ('+U.fmt(hoy)+') hasta tu cita ('+U.fmt(cita)+'): '+dias.length+' días.</p><div class="tablewrap"><table><tbody>'+dias.slice(0,14).map(fila).join('')+'</tbody></table></div>'+(dias.length>14?'<details><summary>Ver los '+(dias.length-14)+' días restantes</summary><div class="tablewrap"><table><tbody>'+dias.slice(14).map(fila).join('')+'</tbody></table></div></details>':'');
   } else { $('planHoy').innerHTML=''; $('planRutina').innerHTML='<p>Cuando captures una fecha de cita futura, aquí aparecerá tu rutina diaria.</p>'; }
+  pintarRepaso(p);
   pintarChecks($('chkDocs'),DOCS,'doc_'); pintarChecks($('chkDia'),DIA,'dia_');
 }
 

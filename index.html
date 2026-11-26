@@ -126,7 +126,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.8 · 26-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.9 · 26-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
@@ -197,6 +197,17 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
     <div><label for="costoTotal">Costo total de tu viaje (MXN) <span class="h">Tu parte, con vuelos</span></label><input id="costoTotal" type="number" min="0"></div>
     <div><label for="gastoDiario">Gasto al día allá (USD) <span class="h">Tu parte</span></label><input id="gastoDiario" type="number" min="0"></div>
     <div><label for="reservas">¿Qué tienes reservado hoy?</label><select id="reservas"><option value="">Sin dato</option><option value="nada">Nada todavía</option><option value="hotel">Solo el hospedaje</option><option value="vuelos">Solo los vuelos</option><option value="ambos">Hospedaje y vuelos</option></select></div>
+  </div></fieldset>
+  <fieldset><legend>Mi arraigo</legend><p class="tip">Opcional: tus razones reales para regresar. Salen en el "Repaso de 1 minuto" y como recordatorio en las preguntas de arraigo. Escribe hechos, no frases para memorizar.</p><div class="grid">
+    <div><label for="arrVivoCon">Con quién vivo <span class="h">Ej. con mis papás, en casa de ellos</span></label><input id="arrVivoCon" type="text"></div>
+    <div><label for="arrPlaza">Tipo de empleo <span class="h">Ej. plaza de base, de confianza, contrato fijo</span></label><input id="arrPlaza" type="text"></div>
+    <div><label for="arrRegresoTrabajo">Día que regreso a trabajar <span class="h">Debe ser después de tu regreso del viaje</span></label><input id="arrRegresoTrabajo" type="date"></div>
+    <div><label for="arrDependen">Quién depende de mí y cómo <span class="h">Ej. les doy dinero cada quincena</span></label><input id="arrDependen" type="text"></div>
+    <div><label for="arrCuidaFamilia">Quién se queda a cargo mientras viajo</label><input id="arrCuidaFamilia" type="text"></div>
+    <div><label for="arrBienes">Bienes a mi nombre <span class="h">Casa, terreno, auto. Vacío si no tienes</span></label><input id="arrBienes" type="text"></div>
+    <div><label for="arrTarjetas">Tarjetas o cuentas a mi nombre</label><input id="arrTarjetas" type="text"></div>
+    <div><label for="arrPorqueFecha">Por qué viajo en esas fechas <span class="h">Ej. mis vacaciones, mi cumpleaños</span></label><input id="arrPorqueFecha" type="text"></div>
+    <div><label for="arrProyectos">Lo que me espera al regresar <span class="h">Trabajo, familia, proyectos con fecha</span></label><input id="arrProyectos" type="text"></div>
   </div></fieldset>
   <fieldset><legend>Citas</legend><div class="grid">
     <div><label for="consulado">Consulado</label><select id="consulado"><option>Guadalajara</option><option>Ciudad de México</option><option>Monterrey</option><option>Tijuana</option><option>Ciudad Juárez</option><option>Hermosillo</option><option>Matamoros</option><option>Mérida</option><option>Nogales</option><option>Nuevo Laredo</option></select></div>
@@ -981,6 +992,7 @@ const MotorConsul = (function(){
     const unicas=[]; alertas.forEach(a=>{ if(!unicas.some(u=>u.texto===a.texto)) unicas.push(a); });
     // Tips
     if(q.tip) tips.push(q.tip);
+    { const d=datoArraigo(q.id,perfil); if(d) tips.push('Tu perfil (Mi arraigo): '+d+'.'); }
     if(coherencia!=null&&coherencia<60) tips.push(TIP_VERDAD+' Tu respuesta no coincidió con tu perfil.');
     if(unicas.some(a=>a.grave)) tips.push('La B1/B2 es para turismo o negocios temporales. Si tu propósito real es turismo, dilo claro; si tu plan es trabajar, estudiar o vivir allá, esta no es la visa correcta y no debes decir lo contrario.');
     if(brevedad<70) tips.push('Responde en 1 a 3 frases. Contesta solo lo que te preguntan; las respuestas largas se leen como duda.');
@@ -1017,7 +1029,7 @@ const MotorConsul = (function(){
 /* ======================================================================
    PERFIL, VALIDACIÓN, EJEMPLO
    ====================================================================== */
-const CAMPOS=['nombre','edad','estadoCivil','hijos','estudios','empresa','puesto','ingresoActual','salario','trabAntEmpresa','trabAntInicio','trabAntFin','llegada','dias','ciudad','hospedaje','quienPaga','pagaDetalle','acompNombre','acompRelacion','viajesPrev','visaNegada','familiaEUA','redFacebook','redInstagram','redOtras','lugares','costoNoche','costoTotal','gastoDiario','reservas','consulado','citaFecha','citaHora','casFecha','casHora'];
+const CAMPOS=['nombre','edad','estadoCivil','hijos','estudios','empresa','puesto','ingresoActual','salario','trabAntEmpresa','trabAntInicio','trabAntFin','llegada','dias','ciudad','hospedaje','quienPaga','pagaDetalle','acompNombre','acompRelacion','viajesPrev','visaNegada','familiaEUA','redFacebook','redInstagram','redOtras','lugares','costoNoche','costoTotal','gastoDiario','reservas','arrVivoCon','arrPlaza','arrRegresoTrabajo','arrDependen','arrCuidaFamilia','arrBienes','arrTarjetas','arrPorqueFecha','arrProyectos','consulado','citaFecha','citaHora','casFecha','casHora'];
 const $=id=>document.getElementById(id);
 // Redes: tres campos en el formulario; p.redes se arma para la evaluación y la validación (vacío = no la declaró)
 const SIN_RED=/^(no|ninguna?|n\/?a|none|no aplica|-)$/i;
@@ -1040,6 +1052,7 @@ function ejemplo(){
     llegada:U.iso(U.addDays(cita,75)),dias:14,ciudad:'Orlando, Florida',hospedaje:'Hotel Palm Breeze, Orlando (reservación)',
     quienPaga:'yo',pagaDetalle:'con mis ahorros',acompNombre:'Carlos Pineda',acompRelacion:'amigo',viajesPrev:'ninguno',visaNegada:'no',
     lugares:'Disney, Universal y Cocoa Beach',costoNoche:120,costoTotal:42000,gastoDiario:90,reservas:'hotel',
+    arrVivoCon:'con mi mamá',arrPlaza:'contrato indefinido',arrRegresoTrabajo:U.iso(U.addDays(cita,75+14+2)),arrDependen:'mi mamá: le doy dinero cada mes',arrCuidaFamilia:'mi hermano',arrBienes:'un auto',arrTarjetas:'una tarjeta de crédito',arrPorqueFecha:'mis vacaciones de verano',arrProyectos:'un curso que empieza al regresar',
     familiaEUA:'Tía Rosa Solís, Houston, Texas (ciudadana)',redFacebook:'Mariana Solís Ibarra',redInstagram:'@mariana.solis.ficticia',redOtras:'',consulado:'Guadalajara',
     citaFecha:U.iso(cita),citaHora:'09:30',casFecha:U.iso(cas),casHora:'13:00'};
 }
@@ -1048,6 +1061,7 @@ function validarPerfil(p){
   const falt=[]; [['empresa','empresa'],['puesto','puesto'],['dias','días de estancia'],['llegada','fecha de llegada']].forEach(([k,n])=>{ if(!p[k]) falt.push(n); });
   if(falt.length) add('alta','Faltan datos para entrevistar: '+falt.join(', ')+'.');
   const ing=U.parseDate(p.ingresoActual), ai=U.parseDate(p.trabAntInicio), af=U.parseDate(p.trabAntFin), ll=U.parseDate(p.llegada), cita=U.parseDate(p.citaFecha), cas=U.parseDate(p.casFecha);
+  { const rt=U.parseDate(p.arrRegresoTrabajo); if(rt&&ll&&p.dias){ const vuelta=U.addDays(ll,+p.dias); if(rt<vuelta) add('alta','Tu regreso al trabajo ('+U.fmt(rt)+') es antes de que termine tu viaje ('+U.fmt(vuelta)+'). Revisa tus fechas.'); } }
   if(af&&ing&&af>ing) add('alta','Empalme de fechas: tu trabajo anterior termina el '+U.fmt(af)+', después de que entraste al trabajo actual ('+U.fmt(ing)+'). El oficial puede notarlo como contradicción.',true);
   if(ai&&af&&ai>af) add('alta','Tu trabajo anterior empieza ('+U.fmt(ai)+') después de terminar ('+U.fmt(af)+').',true);
   if(af&&ing&&af<ing&&U.diffDays(af,ing)>365) add('info','Hay un hueco de '+Math.round(U.diffDays(af,ing)/30)+' meses entre tus dos trabajos. No es malo, pero prepárate para explicarlo con la verdad.');
@@ -1332,6 +1346,12 @@ function tareasDelDia(d,i,cita,cas,tieneAlertas){
   return t;
 }
 const QUIEN_PAGA={yo:'Yo, con mis recursos',familiar:'Un familiar',empresa:'Mi empresa',pareja:'Mi pareja',otro:'Otra persona'};
+/* v1.9 (pedido del usuario, 26-nov-2026): "Mi arraigo". Solo informa: no cambia el puntaje. */
+const ARR_ETQ=[['arrVivoCon','Vivo con'],['arrPlaza','Tipo de empleo'],['arrRegresoTrabajo','Regreso a trabajar'],['arrDependen','Dependen de mí'],['arrCuidaFamilia','A cargo mientras viajo'],['arrBienes','Bienes a mi nombre'],['arrTarjetas','Tarjetas o cuentas'],['arrPorqueFecha','Por qué esas fechas'],['arrProyectos','Me espera al regresar']];
+function valorArraigo(p,k){ const v=(p&&p[k]!=null?String(p[k]):'').trim(); if(!v) return ''; if(k==='arrRegresoTrabajo'){ const d=U.parseDate(v); return d?U.fmt(d):''; } return v; }
+const ARR_PREG={q_conQuienVive:['arrVivoCon'],q_vivienda:['arrVivoCon','arrBienes'],q_permanente:['arrPlaza'],q_regresoTrabajo:['arrRegresoTrabajo'],q_porqueFechaRegreso:['arrRegresoTrabajo'],q_trabajoViaja:['arrRegresoTrabajo'],q_dependientes:['arrDependen'],q_padres:['arrVivoCon','arrDependen'],q_cuidaFamilia:['arrCuidaFamilia'],q_bienes:['arrBienes'],q_comoPagaAlla:['arrTarjetas'],q_porque_ahora:['arrPorqueFecha'],q_proyectos:['arrProyectos','arrRegresoTrabajo'],
+  q_regresa:['arrRegresoTrabajo','arrDependen','arrProyectos'],q_noquedarse:['arrRegresoTrabajo','arrDependen','arrProyectos'],q_regresoATiempo:['arrRegresoTrabajo','arrDependen'],q_vivirEUA:['arrVivoCon','arrProyectos']};
+function datoArraigo(id,p){ const ks=ARR_PREG[id]; if(!ks) return ''; const et=Object.fromEntries(ARR_ETQ); return ks.map(k=>{ const v=valorArraigo(p,k); return v?et[k].toLowerCase()+': '+v:''; }).filter(Boolean).join('; '); }
 function datosRepaso(p){
   const f=k=>(p[k]==null?'':String(p[k])).trim(); const falta='Captúralo en "Mi perfil"';
   const ing=U.parseDate(p.ingresoActual), lleg=U.parseDate(p.llegada), dias=+p.dias||0;
@@ -1346,6 +1366,7 @@ function datosRepaso(p){
   if(+p.costoTotal) plan.push(['Costo de mi viaje','MXN '+(+p.costoTotal).toLocaleString('es-MX')+' (mi parte)']);
   if(+p.gastoDiario) plan.push(['Gasto al día','USD '+(+p.gastoDiario).toLocaleString('es-MX')]);
   if(RES[p.reservas]) plan.push(['Reservado hoy',RES[p.reservas]]);
+  const arr=ARR_ETQ.map(([k,l])=>[l,valorArraigo(p,k)]).filter(r=>r[1]);
   return [
     ['Destino',f('ciudad')||falta],
     ['Fechas',lleg?'Llego el '+U.fmt(lleg)+(dias?', '+dias+' días; regreso el '+U.fmt(reg):''):falta],
@@ -1356,6 +1377,7 @@ function datosRepaso(p){
     ['Sueldo al mes',+p.salario?'MXN '+(+p.salario).toLocaleString('es-MX'):falta],
     ['Quién paga',paga],
     ...plan,
+    ...arr,
     ['Familia en EUA',f('familiaEUA')||'Ninguna'],
     ['Viajes anteriores',f('viajesPrev')||falta],
     ['Redes declaradas',p.redes||'Ninguna']
@@ -1652,7 +1674,7 @@ function mostrarConfirmacionDS160(R){
     h+='<div class="dsrow" role="row"><div role="cell" class="dscampo"><label class="dscheck"><input type="checkbox" id="dsc_'+k+'" '+(ok?'checked':'')+' data-k="'+k+'"><span>'+U.esc(lab)+'</span></label></div><div role="cell">'+inp+(ok&&v===''?'<span class="tip">La solicitud dice que no hay.</span>':'')+(notas[k]?'<span class="tip"><strong>Revisa:</strong> '+U.esc(notas[k])+'</span>':(ok?'':'<span class="tip">No se encontró: escríbelo aquí y se marcará solo.</span>'))+'</div><div role="cell" class="dsact"><small>Dato actual</small> '+U.esc(mostrarAct(k))+'</div></div>'; });
   h+='</div><div class="row" style="margin-top:12px"><button class="btn" id="btnConfDS" type="button">Confirmar y pasar al perfil</button><button class="btn sec" id="btnCancDS" type="button">Cancelar</button></div>';
   box.innerHTML=h; box.classList.remove('hidden');
-  // Todos los campos se pueden corregir o llenar antes de confirmar; al escribir en uno, se marca solo (pedido de Jonathan, 4-nov-2026)
+  // Todos los campos se pueden corregir o llenar antes de confirmar; al escribir en uno, se marca solo (pedido del usuario, 4-nov-2026)
   DS.DEFS.forEach(([k])=>{ const c=$('dsc_'+k), f=$('ds_'+k); if(c&&f){ const marca=()=>{ if(c.dataset.manual==='off') return; c.checked=f.value!==''||R[k]===''; }; c.addEventListener('change',()=>{ c.dataset.manual=c.checked?'on':'off'; }); f.addEventListener('input',marca); f.addEventListener('change',marca); } });
   $('btnCancDS').addEventListener('click',()=>{ box.classList.add('hidden'); box.innerHTML=''; $('msgDS160').textContent='Carga cancelada. No se cambió tu perfil.'; $('fileDS160').value=''; });
   $('btnConfDS').addEventListener('click',()=>{
@@ -1682,6 +1704,8 @@ $('fileDS160').addEventListener('change',async ev=>{
    Nada cambia hasta que el usuario confirma; después se borra el #viaje del link.
    ====================================================================== */
 const VIAJE_DEFS=[['lugares','Lugares y actividades','text'],['costoNoche','Hospedaje por noche (USD)','number'],['costoTotal','Costo total de tu viaje (MXN)','number'],['gastoDiario','Gasto al día allá (USD)','number'],['reservas','Reservado hoy','sel']];
+// v1.9: el link también puede traer "Mi arraigo" (textos de hasta 200 caracteres y la fecha de regreso al trabajo)
+VIAJE_DEFS.push(...ARR_ETQ.map(([k,l])=>[k,l,k==='arrRegresoTrabajo'?'date':'text']));
 const RESERVAS_OPC=[['','Sin dato'],['nada','Nada todavía'],['hotel','Solo el hospedaje'],['vuelos','Solo los vuelos'],['ambos','Hospedaje y vuelos']];
 function leerViajeDeLink(hash){
   const m=/^#viaje=([A-Za-z0-9_-]{4,4000})={0,2}$/.exec(hash||''); if(!m) return null;
@@ -1690,12 +1714,13 @@ function leerViajeDeLink(hash){
   if(typeof j.lugares==='string'&&j.lugares.trim()) R.lugares=j.lugares.trim().slice(0,200);
   ['costoNoche','costoTotal','gastoDiario'].forEach(k=>{ const v=+j[k]; if(isFinite(v)&&v>0&&v<10000000) R[k]=Math.round(v); });
   if(RESERVAS_OPC.some(o=>o[0]&&o[0]===j.reservas)) R.reservas=j.reservas;
+  ARR_ETQ.forEach(([k])=>{ const v=j[k]; if(typeof v!=='string'||!v.trim()) return; if(k==='arrRegresoTrabajo'){ if(/^\d{4}-\d{2}-\d{2}$/.test(v)&&U.parseDate(v)) R[k]=v; } else R[k]=v.trim().slice(0,200); });
   return Object.keys(R).length?R:null;
 }
 function quitarViajeDelLink(){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} }
 function mostrarConfirmacionViaje(R){
   const box=$('confViaje'); const act=leerPerfil();
-  const txt=(k,v)=>{ if(v===''||v===0||v==null) return '—'; if(k==='reservas'){ const o=RESERVAS_OPC.find(x=>x[0]===v); return o?o[1]:String(v); } return typeof v==='number'?v.toLocaleString('es-MX'):String(v); };
+  const txt=(k,v)=>{ if(v===''||v===0||v==null) return '—'; if(k==='arrRegresoTrabajo'){ const d=U.parseDate(v); return d?U.fmt(d):String(v); } if(k==='reservas'){ const o=RESERVAS_OPC.find(x=>x[0]===v); return o?o[1]:String(v); } return typeof v==='number'?v.toLocaleString('es-MX'):String(v); };
   let h='<h2>Datos de tu itinerario</h2><p class="tip">Este link trae el plan de tu viaje. Marca lo que quieras pasar a tu perfil; si no marcas un campo, tu dato actual no cambia.</p><div class="dsrows" role="table" aria-label="Datos del plan del viaje"><div class="dsrow dshead" role="row"><div role="columnheader">Campo</div><div role="columnheader">Dato del itinerario</div><div role="columnheader">Dato actual</div></div>';
   VIAJE_DEFS.forEach(([k,lab])=>{ if(!(k in R)) return;
     h+='<div class="dsrow" role="row"><div role="cell" class="dscampo"><label class="dscheck"><input type="checkbox" id="vjc_'+k+'" checked><span>'+U.esc(lab)+'</span></label></div><div role="cell">'+U.esc(txt(k,R[k]))+'</div><div role="cell" class="dsact"><small>Dato actual</small> '+U.esc(txt(k,act[k]))+'</div></div>'; });
@@ -1705,7 +1730,7 @@ function mostrarConfirmacionViaje(R){
   $('btnConfViaje').addEventListener('click',()=>{ const nuevo={}; let n=0;
     VIAJE_DEFS.forEach(([k])=>{ const c=$('vjc_'+k); if(c&&c.checked){ nuevo[k]=R[k]; n++; } });
     escribirPerfil(nuevo); guardarPerfil(); pintarValidaciones(); quitarViajeDelLink();
-    box.innerHTML='<p class="tip"><strong>Listo:</strong> se pasaron '+n+' datos al "Plan del viaje" de tu perfil. Ahora el simulador compara tus respuestas con tu itinerario.</p>'; });
+    box.innerHTML='<p class="tip"><strong>Listo:</strong> se pasaron '+n+' datos a tu perfil (Plan del viaje y Mi arraigo). Ahora el simulador compara tus respuestas con tu itinerario.</p>'; });
 }
 
 /* ======================================================================

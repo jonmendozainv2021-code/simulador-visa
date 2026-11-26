@@ -126,7 +126,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.7 · 26-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.8 · 26-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
@@ -219,6 +219,7 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
     <h2>Entrevista de práctica</h2>
     <p>El cónsul te hará de 10 a 17 preguntas según tu perfil y tu nivel. Cambian en cada práctica. Contesta corto y con la verdad: 1 a 3 frases.</p>
     <div class="grid">
+      <div><label for="selTipo">Tipo de práctica</label><select id="selTipo"><option value="completa">Completa (todo tu perfil)</option><option value="viaje">Solo mi viaje (12 a 15 preguntas)</option></select></div>
       <div><label for="selLang">Idioma del cónsul</label><select id="selLang"><option value="es">Español (México)</option><option value="en">English</option></select></div>
       <div><label for="selVoz">Voz del cónsul</label><select id="selVoz"><option value="on">Activada</option><option value="off">Solo texto</option></select></div>
       <div><label for="selPausa">Pausa antes de cortar el micrófono</label><select id="selPausa"><option value="3">3 segundos</option><option value="5">5 segundos (recomendado)</option><option value="8">8 segundos</option><option value="0">Solo cuando yo toque Terminar</option></select></div>
@@ -409,6 +410,10 @@ const MotorConsul = (function(){
     else if(!usd&&!mxn) metas=metas.concat(metas.map(v=>moneda==='USD'?v*TC_APROX:v/TC_APROX));
     const ok=nums.some(x=>metas.some(m=>Math.abs(x-m)<=m*0.3));
     if(ok) return {score:usd||mxn?100:90,alertas:[],notas:usd||mxn?[]:['Di la moneda: pesos o dólares.']};
+    // v1.8 (pedido de Jonathan, 26-nov-2026): una cifra cercana (hasta ±50 %) no es contradicción; solo se pide acercarla al plan
+    // la banda de ±50 % solo cuenta contra la cifra base del plan (no contra la estancia completa ni la mitad): El Contreras, 26-nov-2026
+    let base=[obj]; if(moneda==='USD'&&mxn&&!usd) base=[obj*TC_APROX]; else if(moneda==='MXN'&&usd&&!mxn) base=[obj/TC_APROX]; else if(!usd&&!mxn) base=[obj,moneda==='USD'?obj*TC_APROX:obj/TC_APROX];
+    if(nums.some(x=>base.some(m=>Math.abs(x-m)<=m*0.5))) return {score:75,alertas:[],notas:['Cifra cercana, pero tu plan dice '+dicho+': usa la misma cifra siempre.']};
     return {score:30,alertas:['Cifra distinta a tu plan: para '+lab+' tu plan dice '+dicho+'.'],notas:[]};
   }
   function parseAnios(t){ const out=[]; const re=/\b(19|20)\d{2}\b/g; let m; t=U.norm(t); while((m=re.exec(t))) out.push(+m[0]); return out; }
@@ -452,6 +457,8 @@ const MotorConsul = (function(){
     if(q&&q.permisoLargo) limpio=limpio.replace(RE_PERMISO,' ');
     // v1.7: las cifras de dinero ("150 dólares al día") no son días de estancia (El Contreras, 26-nov-2026)
     limpio=limpio.replace(/\b\d[\d.,]*\s*(?:mil\s+|k\s+)?(?:dolares?|dlls?|usd|pesos?|mxn|dollars?|bucks)\b/g,' ');
+    // v1.8: "100 al día", "150 diarios", "120 per day" son dinero, no días de estancia
+    limpio=limpio.replace(/\b\d[\d.,]*\s*(?:al dia|por dia|diarios?|a day|per day|daily)\b/g,' ');
     PATRONES.forEach(p=>{ if(p.re.test(limpio)) out.push({texto:p.t,grave:p.g}); });
     const dias=parseDias(limpio);
     const largo=/(\d+|\w+)\s*(dias?|semanas?|meses|mes|days?|weeks?|months?)\b/.test(limpio) && dias.some(d=>d>90);
@@ -601,6 +608,8 @@ const MotorConsul = (function(){
     gastoDiario(tn,p){ return montoPlan(tn,+p.gastoDiario,'USD','tu gasto al día',[1]); },
     reservas(tn,p){
       const r=p.reservas; if(!r) return null;
+      // v1.8 (pedido de Jonathan, 26-nov-2026): "nada más / nomás / no más el hotel" significa "solo el hotel", no es negación
+      tn=tn.replace(/\b(nada mas|nomas)\b/g,'solo').replace(/\bno mas (?=(el|la|los|las|the)\b)/g,'solo ');
       const V='(?:vuelos?|avion|boletos?|flights?|plane tickets?|tickets?)', H='(?:hotel|hospedaje|hostal|hostel|cuarto|habitacion|airbnb|lodging|room|accommodation)';
       const NEG='\\b(?:no|todavia no|aun no|sin|ni|not yet|not|haven.?t|no he|no hemos|tampoco)';
       const DESP='\\b(?:todavia no|aun no|no|cuando tenga|cuando me den|despues|not yet|once i get|after|tampoco)\\b';
@@ -626,9 +635,12 @@ const MotorConsul = (function(){
         if(!menc(V,tn)&&!menc(H,tn)&&afirma&&r==='nada') al.push('Dijiste que sí, pero en tu plan no hay nada reservado todavía.');
         if(al.length) return {score:20,alertas:al,notas:[]};
       }
+      if(r==='nada'&&/\bsolo\b/.test(tn)&&(menc(V,tn)||menc(H,tn))) return {score:70,alertas:[],notas:['Di qué tienes reservado: '+QUE+'.']};
       if(r==='nada') return hayNeg&&!afirma?{score:100,alertas:[],notas:[]}:{score:70,alertas:[],notas:['Di qué tienes reservado: '+QUE+'.']};
       if(r==='ambos'&&!hayNeg&&(afirma||(menc(V,tn)&&menc(H,tn)))) return {score:100,alertas:[],notas:[]};
       if(dijoV===tieneV&&dijoH===tieneH) return {score:100,alertas:[],notas:[]};
+      // "Solo el hotel" / "only the flights": nombrar únicamente lo que sí tienes ya es la respuesta completa
+      if(/\b(solo|solamente|unicamente|only|just)\b/.test(tn)&&r!=='ambos'&&(tieneH?dijoH===true&&dijoV===null:dijoV===true&&dijoH===null)) return {score:100,alertas:[],notas:[]};
       if(!hayNeg&&r!=='ambos'&&(tieneH?dijoH===true:dijoV===true)&&!menc(tieneH?V:H,tn)) return {score:85,alertas:[],notas:['Di también qué te falta: '+QUE+'.']};
       return {score:70,alertas:[],notas:['Di qué tienes reservado: '+QUE+'.']};
     },
@@ -896,6 +908,17 @@ const MotorConsul = (function(){
     return {cola,motivos,nivel:plan.nivel,nivelNombre:cfg.nombre,debiles:plan.debiles,maxRep:cfg.rep,pool,recientes:[...recientes]};
   }
 
+  // v1.8 (pedido de Jonathan, 26-nov-2026): práctica corta "Solo mi viaje" (propósito, plan, fechas, hospedaje, reservaciones y dinero)
+  function elegirViaje(perfil,opts){
+    opts=opts||{}; const m=marcas(perfil); const B=bancoPreguntas; const plan=planAdaptativo(opts);
+    const ok=id=>B[id]&&elegible(B[id],perfil,m);
+    const fijas=['q_proposito','q_queHara','q_lugares','q_tiempo','q_reservas','q_hospedaje','q_quienpaga','q_costo'].filter(ok);
+    const extra=barajar(['q_fechaLlegada','q_regreso','q_boletos','q_costoHotel','q_hotelComo','q_gastoDiario','q_pagaEstancia','q_quienViaja','q_acompPaga','q_porqueCiudad','q_primerDia','q_seguro'].filter(ok)).slice(0,4);
+    const lista=fijas.concat(extra).sort((a,b)=>(a==='q_proposito'?-1:b==='q_proposito'?1:(B[a].orden-B[b].orden)));
+    const pool=Object.keys(B).filter(id=>ok(id)&&lista.indexOf(id)<0&&'ABCDF'.indexOf(B[id].tema)>-1);
+    return {cola:lista.map(id=>variante(B[id])),motivos:['Práctica corta: solo preguntas de tu viaje'],nivel:plan.nivel,nivelNombre:plan.cfg.nombre,debiles:[],maxRep:plan.cfg.rep,pool,recientes:[]};
+  }
+
   function siguientePregunta(estado,respuesta){
     const actual=estado.cola[estado.pos]; const tn=U.norm(respuesta||'');
     const maxLen=estado.maxLen||(estado.cola.length+5);
@@ -988,7 +1011,7 @@ const MotorConsul = (function(){
     return {items,puntaje,prob,nivel,alertas:todas,graves,dims,segundos:seg};
   }
 
-  return {bancoPreguntas,elegirPreguntas,siguientePregunta,evaluarRespuesta,evaluarSesion,planAdaptativo,actualizarTemas,TEMAS,_parse:{parseDias,parseMonto,parseAnios,detectarAlertas},_marcas:marcas};
+  return {bancoPreguntas,elegirPreguntas,elegirViaje,siguientePregunta,evaluarRespuesta,evaluarSesion,planAdaptativo,actualizarTemas,TEMAS,_parse:{parseDias,parseMonto,parseAnios,detectarAlertas},_marcas:marcas};
 })();
 
 /* ======================================================================
@@ -1087,7 +1110,8 @@ let E=null; // estado: {perfil, cola, pos, nSeg, nRep, maxRep, pool, maxLen, res
 K.recientes='simvisa_recientes_v1'; K.temas='simvisa_temas_v1';
 const NIV_TXT={1:'1 de 3 (básico)',2:'2 de 3 (intermedio)',3:'3 de 3 (avanzado)'};
 // Lo que el simulador aprende de ti, guardado solo en este navegador
-function ctxAdaptativo(){ return {hist:U.store.get(K.hist,[]).map(e=>e.p), temas:U.store.get(K.temas,{}), recientes:U.store.get(K.recientes,[])}; }
+// La práctica corta "Solo mi viaje" no cuenta para el nivel de la entrevista completa (El Contreras, 26-nov-2026)
+function ctxAdaptativo(){ return {hist:U.store.get(K.hist,[]).filter(e=>e.tipo!=='viaje').map(e=>e.p), temas:U.store.get(K.temas,{}), recientes:U.store.get(K.recientes,[])}; }
 let timer=null, tInicio=0, ultimoResultado=null;
 function prepararIntro(){
   if(E) return; $('entIntro').classList.remove('hidden'); $('entEnCurso').classList.add('hidden');
@@ -1115,8 +1139,9 @@ function mostrarPregunta(){
 }
 function comenzar(){
   const p=leerPerfil(); const v=validarPerfil(p); if(v.some(a=>a.nivel==='alta'&&/Faltan datos/.test(a.texto))){ irA('perfil'); pintarValidaciones(); return; }
-  const sel=MotorConsul.elegirPreguntas(p,ctxAdaptativo());
-  E={perfil:p,cola:sel.cola,pos:0,nSeg:0,nRep:0,maxRep:sel.maxRep,pool:sel.pool,recientes:sel.recientes,maxLen:sel.cola.length+3,nivel:sel.nivel,respuestas:[],lang:$('selLang').value,voz:$('selVoz').value==='on'&&Voz.soporta};
+  const viaje=$('selTipo')&&$('selTipo').value==='viaje';
+  const sel=viaje?MotorConsul.elegirViaje(p,ctxAdaptativo()):MotorConsul.elegirPreguntas(p,ctxAdaptativo());
+  E={tipo:viaje?'viaje':'completa',perfil:p,cola:sel.cola,pos:0,nSeg:0,nRep:0,maxRep:sel.maxRep,pool:sel.pool,recientes:sel.recientes,maxLen:sel.cola.length+3,nivel:sel.nivel,respuestas:[],lang:$('selLang').value,voz:$('selVoz').value==='on'&&Voz.soporta};
   const rc=U.store.get(K.recientes,[]); rc.push(sel.cola.map(q=>q.id)); U.store.set(K.recientes,rc.slice(-3));
   $('entIntro').classList.add('hidden'); $('entEnCurso').classList.remove('hidden'); mostrarPregunta();
 }
@@ -1128,13 +1153,13 @@ function enviar(){
   if(sig) mostrarPregunta(); else terminar();
 }
 function terminar(){
-  clearInterval(timer); Voz.callar(); cancelarMic(); const resp=E.respuestas; const perfil=E.perfil; E=null;
+  clearInterval(timer); Voz.callar(); cancelarMic(); const resp=E.respuestas; const perfil=E.perfil; const tipo=E.tipo; E=null;
   $('entEnCurso').classList.add('hidden'); $('entIntro').classList.remove('hidden');
   if(!resp.length){ prepararIntro(); return; }
   const r=MotorConsul.evaluarSesion(resp,perfil); ultimoResultado=r;
   U.store.set(K.temas,MotorConsul.actualizarTemas(U.store.get(K.temas,{}),r.items));
   const rc=U.store.get(K.recientes,[]); if(rc.length){ rc[rc.length-1]=resp.map(x=>x.q.id); U.store.set(K.recientes,rc); }
-  const h=U.store.get(K.hist,[]); h.push({f:new Date().toISOString(),p:r.puntaje,prob:r.prob,n:resp.length,alertas:r.alertas.map(a=>a.texto)}); U.store.set(K.hist,h);
+  const h=U.store.get(K.hist,[]); h.push({f:new Date().toISOString(),p:r.puntaje,prob:r.prob,n:resp.length,tipo,alertas:r.alertas.map(a=>a.texto)}); U.store.set(K.hist,h);
   pintarResultados(r); prepararIntro(); irA('resultados');
 }
 $('btnComenzar').addEventListener('click',comenzar);
@@ -1242,7 +1267,7 @@ function pintarHistorial(){
   h.forEach((e,i)=>{ svg+='<circle cx="'+x(i)+'" cy="'+y(e.p)+'" r="5" fill="var(--ambar)" stroke="var(--tinta)"><title>'+e.p+' pts</title></circle>'; });
   svg+='</svg>'; g.innerHTML=svg;
   let t='<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Puntaje</th><th>Prob.</th><th>Alertas</th></tr></thead><tbody>';
-  h.slice().reverse().forEach(e=>{ const d=new Date(e.f); t+='<tr><td>'+U.fmtHora(d)+'</td><td>'+e.p+'</td><td>'+e.prob+'%</td><td>'+(e.alertas.length?e.alertas.length+': '+U.esc(e.alertas.slice(0,2).join(' · ')):'0')+'</td></tr>'; });
+  h.slice().reverse().forEach(e=>{ const d=new Date(e.f); t+='<tr><td>'+U.fmtHora(d)+(e.tipo==='viaje'?'<br><small>Solo mi viaje</small>':'')+'</td><td>'+e.p+'</td><td>'+e.prob+'%</td><td>'+(e.alertas.length?e.alertas.length+': '+U.esc(e.alertas.slice(0,2).join(' · ')):'0')+'</td></tr>'; });
   l.innerHTML=t+'</tbody></table></div>';
 }
 function accionesHist(confirmar){
@@ -1313,7 +1338,14 @@ function datosRepaso(p){
   const trabajo=[f('puesto'),f('empresa')].filter(Boolean).join(' en ');
   const reg=lleg&&dias?U.addDays(lleg,dias):null;
   const acomp=f('acompNombre')?f('acompNombre')+(f('acompRelacion')?' ('+f('acompRelacion')+')':''):'Viajo solo(a)';
-  const paga=(QUIEN_PAGA[p.quienPaga]||f('quienPaga'))+(p.quienPaga!=='yo'&&f('pagaDetalle')?': '+f('pagaDetalle'):'');
+  const paga=(QUIEN_PAGA[p.quienPaga]||f('quienPaga'))+(f('pagaDetalle')?': '+f('pagaDetalle'):'');
+  // v1.8: el plan del viaje también entra al repaso, solo si está capturado
+  const RES={nada:'Nada todavía',hotel:'Solo el hospedaje',vuelos:'Solo los vuelos',ambos:'Hospedaje y vuelos'};
+  const plan=[]; if(f('lugares')) plan.push(['Qué voy a hacer',f('lugares')]);
+  if(+p.costoNoche) plan.push(['Hospedaje por noche','USD '+(+p.costoNoche).toLocaleString('es-MX')+' el cuarto']);
+  if(+p.costoTotal) plan.push(['Costo de mi viaje','MXN '+(+p.costoTotal).toLocaleString('es-MX')+' (mi parte)']);
+  if(+p.gastoDiario) plan.push(['Gasto al día','USD '+(+p.gastoDiario).toLocaleString('es-MX')]);
+  if(RES[p.reservas]) plan.push(['Reservado hoy',RES[p.reservas]]);
   return [
     ['Destino',f('ciudad')||falta],
     ['Fechas',lleg?'Llego el '+U.fmt(lleg)+(dias?', '+dias+' días; regreso el '+U.fmt(reg):''):falta],
@@ -1323,6 +1355,7 @@ function datosRepaso(p){
     ['Desde cuándo',ing?['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][ing.getMonth()]+' de '+ing.getFullYear():falta],
     ['Sueldo al mes',+p.salario?'MXN '+(+p.salario).toLocaleString('es-MX'):falta],
     ['Quién paga',paga],
+    ...plan,
     ['Familia en EUA',f('familiaEUA')||'Ninguna'],
     ['Viajes anteriores',f('viajesPrev')||falta],
     ['Redes declaradas',p.redes||'Ninguna']

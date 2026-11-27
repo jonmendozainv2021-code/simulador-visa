@@ -7,6 +7,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icono-192.png">
 <link rel="apple-touch-icon" href="icons/icono-180.png">
+<meta name="apple-mobile-web-app-title" content="Consul Sim">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
 <title>Consul Simulator · Entrevista de visa B1/B2</title>
 <meta name="description" content="Consul Simulator: práctica de entrevista de visa B1/B2 en español con tu perfil DS-160, evaluación y plan hasta la cita. Herramienta de práctica no oficial.">
@@ -120,17 +121,19 @@ footer{padding:20px 0 40px;font-size:.85rem;color:var(--txt2)}
 .btn.link{background:transparent;color:var(--txt2);border:0;text-decoration:underline;font-weight:600;font-size:.85rem;padding:6px 8px}
 .nivel-hoy{background:var(--chip);color:var(--chip-txt);border-radius:8px;padding:8px 12px;font-weight:600;font-size:.95rem}
 .hidden{display:none!important}
+.aviso-ios{background:var(--chip);color:var(--chip-txt);border-left:5px solid var(--verde);padding:10px 14px;margin:14px 0;border-radius:6px;font-size:.92rem;display:flex;gap:10px;align-items:flex-start}.aviso-ios p{margin:0;flex:1}.aviso-ios button{flex:none;min-width:44px;min-height:44px;background:transparent;border:1px solid currentColor;border-radius:8px;color:inherit;font:inherit;cursor:pointer}
 .chart{width:100%;height:auto;max-height:240px}
 @media(max-width:480px){h1{font-size:1.3rem}.big{font-size:2.2rem}.bubble{font-size:1.1rem}}
 </style>
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.9 · 26-nov-2026 · por AutoRise Solutions</small></h1>
+  <h1>Consul Simulator<small>Práctica de entrevista de visa B1/B2 en español · versión 1.10 · 27-nov-2026 · por AutoRise Solutions</small></h1>
   <div class="row"><button class="btn acc hidden" id="btnInstalar" type="button">Instalar app</button><button class="btn sec" id="btnTema" style="color:#fff;border-color:#fff" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button></div>
 </div></header>
 
 <main class="wrap">
+<div class="aviso-ios hidden" id="avisoIOS" role="note"><p id="avisoIOStxt"><strong>Instálala en tu iPhone:</strong> en Safari toca <strong>Compartir</strong> (si no lo ves, primero <strong>⋯</strong>) y luego <strong>Agregar a inicio</strong> (si no aparece, toca <strong>Ver más</strong>). Después ábrela una vez con internet desde su ícono: así queda lista para usarse sin señal. Tu práctica en Safari no pasa a la app instalada.</p><button type="button" id="btnCerrarIOS" aria-label="Cerrar el aviso de instalación">✕</button></div>
 <div class="aviso-legal" role="note"><strong>Aviso:</strong> esta herramienta es de práctica. No es del gobierno de Estados Unidos ni de ningún consulado, no garantiza la visa y no es asesoría legal. La decisión la toma siempre el oficial consular. Practica con la verdad: tus respuestas deben ser coherentes con tu DS-160 y tus documentos reales.</div>
 
 <nav class="tabs" role="tablist" aria-label="Secciones">
@@ -1760,6 +1763,18 @@ let avisoInstalar=null;
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); avisoInstalar=e; $('btnInstalar').classList.remove('hidden'); });
 $('btnInstalar').addEventListener('click',async()=>{ if(!avisoInstalar) return; avisoInstalar.prompt(); try{ await avisoInstalar.userChoice; }catch(e){} avisoInstalar=null; $('btnInstalar').classList.add('hidden'); });
 window.addEventListener('appinstalled',()=>$('btnInstalar').classList.add('hidden'));
+// v1.10 (27-nov-2026): el iPhone no tiene botón de instalar; se muestran los pasos. No sale si ya está instalada ni 7 días después de cerrarlo.
+(function(){
+  const ua=navigator.userAgent||'';
+  const esIOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+  const instalada=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+  let cerrado=0; try{ cerrado=+localStorage.getItem('simvisa_avisoIOS')||0; }catch(e){}
+  if(!esIOS||instalada||Date.now()-cerrado<7*864e5) return;
+  // Chrome, Firefox, Edge y los navegadores de Instagram o Facebook en iPhone: primero hay que abrirla en Safari.
+  if(/CriOS|FxiOS|EdgiOS|Instagram|FBAN|FBAV|GSA\//.test(ua)) $('avisoIOStxt').innerHTML='<strong>Para instalarla en tu iPhone:</strong> abre este link en <strong>Safari</strong> (copia la dirección y pégala en Safari). Ahí toca <strong>Compartir</strong> y luego <strong>Agregar a inicio</strong>.';
+  $('avisoIOS').classList.remove('hidden');
+  $('btnCerrarIOS').addEventListener('click',()=>{ $('avisoIOS').classList.add('hidden'); try{ localStorage.setItem('simvisa_avisoIOS',String(Date.now())); }catch(e){} });
+})();
 </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 // Service worker del simulador: guarda la app en el celular para que abra sin internet.
 // Al publicar una versión nueva, cambia VERSION para que los celulares la descarguen.
-const VERSION = 'simvisa-v11';
+const VERSION = 'simvisa-v12';
 const ARCHIVOS = ['./', 'index.html', 'manifest.webmanifest', 'icons/icono-192.png', 'icons/icono-512.png', 'icons/icono-180.png', 'vendor/pdfjs/pdf.min.mjs', 'vendor/pdfjs/pdf.worker.min.mjs'];
 
 self.addEventListener('install', e => {
@@ -19,7 +19,7 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request)
       .then(r => {
-        if (r.ok && new URL(e.request.url).origin === location.origin) {
+        if (r.ok && !r.redirected && new URL(e.request.url).origin === location.origin) {
           const copia = r.clone();
           caches.open(VERSION).then(c => c.put(e.request, copia));
         }
